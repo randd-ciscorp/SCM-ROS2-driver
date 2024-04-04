@@ -1,0 +1,8 @@
+<launch>
+    <node pkg="tof1_driver" exec="tof_node" name="tof_node" namespace="tof1_driver">
+        <param name="camera_params" value="package://tof1_driver/cam_param.yaml"/>
+    </node>
+
+    <node pkg="rviz2" exec="rviz2" name="rviz_node"/>
+
+</launch>
