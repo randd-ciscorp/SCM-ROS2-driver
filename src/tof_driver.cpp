@@ -15,10 +15,14 @@ namespace tof_driver
 {
 
 ToFCVNode::ToFCVNode(const rclcpp::NodeOptions & node_options) : Node("tof_driver", node_options){
-    imgPub_ = create_publisher<sensor_msgs::msg::Image>("img_depth", 10);
-    pclPub_ = create_publisher<sensor_msgs::msg::PointCloud2>("pcl_depth", 10);
-    infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>("cam_info", 10);
+    imgPub_ = create_publisher<sensor_msgs::msg::Image>(topic_prefix + "/img_depth", 10);
+    pclPub_ = create_publisher<sensor_msgs::msg::PointCloud2>(topic_prefix + "/pcl_depth", 10);
+    infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topic_prefix + "/cam_info", 10);
 
+    cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm1-tof");
+    importParams();
+
+    
     cap_ = std::make_shared<Device>();
     cap_->Connect("0x0001", 480, 640);
     width_ = 640;
@@ -40,6 +44,26 @@ void ToFCVNode::getInfo(){
     printf("info");
 }
 
+void ToFCVNode::importParams(){
+    if(!this->has_parameter("camera_params")){
+        //this->declare_parameter("camera_params", "/home/boulel/ros2_ws/src/tof1_driver/cam_param.yaml");
+        this->declare_parameter("camera_params", "package://tof1_driver/cam_param.yaml");
+    }
+    std::string param_file_path = this->get_parameter("camera_params").as_string();
+    
+    if (param_file_path != "")
+    {
+        if (cinfo_->validateURL(param_file_path))
+        {
+            cinfo_->loadCameraInfo(param_file_path);
+        }
+        else
+        {
+            RCLCPP_WARN(get_logger(), "Could not find the parameter file at: %s", param_file_path.c_str());
+        }
+    }
+}
+
 void ToFCVNode::start(){
     std::cout << "Start Cam callback" << std::endl;
     timer_ = this->create_wall_timer(30ms, std::bind(&ToFCVNode::DepthCallback, this));
@@ -54,7 +78,6 @@ void ToFCVNode::InfoCallback(){
 }
 
 std::vector<std::vector<float>> ToFCVNode::splitXYZ(float* data){
-    
     int size = width_ * height_;
     std::vector<std::vector<float>> output(3, std::vector<float>(size, 0));
     for (int i = 0; i < size*3; i+=3)
@@ -63,7 +86,6 @@ std::vector<std::vector<float>> ToFCVNode::splitXYZ(float* data){
         output[1][i/3] = data[i+1]; // Y
         output[2][i/3] = data[i+2]; // Z
     }
-
     return output;
 }
 
@@ -147,15 +169,15 @@ void ToFCVNode::pubDepthPtc(float * data){
 
 void ToFCVNode::DepthCallback(){
     cv::Mat dFrame;
-    std::cout << width_*height_*3*sizeof(float) << std::endl;
     float *frameData = (float*)malloc(width_*height_*3*sizeof(float));
     while (rclcpp::ok() && isConnected())
     {
         cap_->GetData(frameData);
 
         // Cam Info
-        auto infoMsg = sensor_msgs::msg::CameraInfo();
-
+        auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());
+        infoPub_->publish(*infoMsg);
+        
         // 2D Image
         pubDepthImage(frameData);
 
@@ -163,6 +185,4 @@ void ToFCVNode::DepthCallback(){
         pubDepthPtc(frameData);
     }
 }
-
-
 }
