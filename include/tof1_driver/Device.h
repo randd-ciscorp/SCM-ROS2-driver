@@ -64,6 +64,9 @@ public:
     void* GetFrameData();
 	bool m_StreamOn = false;
 
+	int GetExposureT();
+	void SetExposureT(int value);
+
 private:
 	int m_FD = -1;
 

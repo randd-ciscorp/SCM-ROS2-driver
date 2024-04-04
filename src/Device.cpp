@@ -234,3 +234,25 @@ int Device::GetData(float* data){
         return 1;
     }
 }
+
+// Not usable yet
+int Device::GetExposureT(){
+    struct v4l2_control ctrl;
+    ctrl.id = V4L2_CID_EXPOSURE;
+    if (xioctl(m_FD, VIDIOC_G_CTRL, &ctrl) < 0)
+    {
+        errno_exit("Get Exposure");
+    }
+    return ctrl.value;
+}
+
+// Not usable yet
+void Device::SetExposureT(int value){
+    struct v4l2_control ctrl;
+    ctrl.id = V4L2_CID_EXPOSURE;
+    ctrl.value = value;
+    if (xioctl(m_FD, VIDIOC_S_CTRL, &ctrl) < 0)
+    {
+        errno_exit("Set Exposure");
+    }
+}
