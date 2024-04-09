@@ -46,13 +46,13 @@ void ToFCVNode::getInfo(){
 
 void ToFCVNode::importParams(){
     if(!this->has_parameter("camera_params")){
-        //this->declare_parameter("camera_params", "/home/boulel/ros2_ws/src/tof1_driver/cam_param.yaml");
         this->declare_parameter("camera_params", "package://tof1_driver/cam_param.yaml");
     }
     std::string param_file_path = this->get_parameter("camera_params").as_string();
-    
+
     if (param_file_path != "")
     {
+        RCLCPP_INFO(get_logger(), "Load parameters file: %s", param_file_path.c_str());
         if (cinfo_->validateURL(param_file_path))
         {
             cinfo_->loadCameraInfo(param_file_path);
@@ -92,7 +92,7 @@ std::vector<std::vector<float>> ToFCVNode::splitXYZ(float* data){
 void ToFCVNode::normalize(float* vec){
     for (size_t i = 0; i < width_ * height_; i++)
     {
-        //7.5 -> max distance
+        //7.5m -> max distance
         vec[i] = vec[i] / 7.5 * 255.; 
     }
 }
@@ -114,8 +114,14 @@ void ToFCVNode::pubDepthImage(float* data){
         printf("NOT CONTINOUS");
     }
 
+    // Msg header
+    auto header = std_msgs::msg::Header();
+    header.frame_id = "camera";
+    header.stamp = this->get_clock()->now();
+
     // 2D Image publishing
     auto imgMsg = sensor_msgs::msg::Image();
+    imgMsg.header = header;
     imgMsg.width = width_;
     imgMsg.height = height_;
     imgMsg.encoding = sensor_msgs::image_encodings::TYPE_8UC3;
@@ -130,7 +136,7 @@ void ToFCVNode::pubDepthPtc(float * data){
         auto header = std_msgs::msg::Header();
         rclcpp::Time time;
         header.stamp = this->get_clock()->now();
-        header.frame_id = "camera_frame";
+        header.frame_id = "cam_depth";
 
         // 3D Point clouds message
         auto ptcMsg = sensor_msgs::msg::PointCloud2();
@@ -176,6 +182,8 @@ void ToFCVNode::DepthCallback(){
 
         // Cam Info
         auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());
+        infoMsg->header.frame_id = "cam_depth";
+        infoMsg->header.stamp = this->get_clock()->now();
         infoPub_->publish(*infoMsg);
         
         // 2D Image
