@@ -9,6 +9,9 @@
 #include <errno.h>
 #include <string.h>
 
+#include <rclcpp/rclcpp.hpp>
+#include <opencv2/opencv.hpp>
+
 #include "tof1_driver/Device.h"
 #include <iostream>
 
@@ -70,7 +73,7 @@ void Device::init_mmap(){
         }
 
         m_Param.buffers[bufInd].length = buf.length;
-        m_Param.buffers[bufInd].data = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, m_FD ,buf.m.offset);
+        m_Param.buffers[bufInd].data = (uint8_t*)mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, m_FD ,buf.m.offset);
         if (m_Param.buffers[bufInd].data == MAP_FAILED)
         {
             errno_exit("MMAP");
@@ -96,6 +99,8 @@ int Device::Connect(const char* serial_number, int height, int width)
     {
         return E_POINTER;
     }
+
+    std::cout << "Test open" << std::endl;
 
     // Open
     m_FD = open(instanceId.DeviceName.data(), O_RDWR | O_NONBLOCK);
@@ -201,7 +206,7 @@ void* Device::GetFrameData(){
     }
 }
 
-int Device::GetData(float* data){
+int Device::GetData(pclData* data){
     fd_set fds;
     FD_ZERO(&fds);
     FD_SET(m_FD, &fds);
@@ -223,8 +228,20 @@ int Device::GetData(float* data){
         {
             errno_exit("DQbuf");
         }
-        
-        memcpy((void*)data, m_Param.buffers[in_buf.index].data, m_Param.buffers[in_buf.index].length);
+
+        memcpy((void*)data, (void*)m_Param.buffers[in_buf.index].data, m_Param.buffers[in_buf.index].length);
+
+        /*for (int i = 0; i < 480*640; i++)
+        {
+            memcpy(&data[i].x, m_Param.buffers[in_buf.index].data + i*sizeof(pclData), sizeof(float));
+            memcpy(&data[i].y, m_Param.buffers[in_buf.index].data + i*sizeof(pclData)+4, sizeof(float));
+            memcpy(&data[i].z, m_Param.buffers[in_buf.index].data + i*sizeof(pclData)+8, sizeof(float));
+            memcpy(&data[i].b, m_Param.buffers[in_buf.index].data + i*sizeof(pclData)+12, sizeof(uint8_t));
+            memcpy(&data[i].g, m_Param.buffers[in_buf.index].data + i*sizeof(pclData)+13, sizeof(uint8_t));
+            memcpy(&data[i].r, m_Param.buffers[in_buf.index].data + i*sizeof(pclData)+14, sizeof(uint8_t));
+            memcpy(&data[i].a, m_Param.buffers[in_buf.index].data + i*sizeof(pclData)+15, sizeof(uint8_t));
+            //memcpy(&data[i] , m_Param.buffers[in_buf.index].data + i*sizeof(pclData), sizeof(pclData));
+        }*/
 
         if (xioctl(m_FD, VIDIOC_QBUF, &in_buf) < 0)
         {

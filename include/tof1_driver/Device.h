@@ -16,9 +16,20 @@
 typedef long	LONG;
 typedef unsigned char	BYTE;
 
+struct pclData
+{
+    float x;
+	float y;
+	float z;
+    uint8_t b;
+	uint8_t g;
+	uint8_t r;
+    uint8_t a;
+};
+
 struct RequestBuffer
 {
-    void *data;
+    uint8_t *data;
     size_t length;
 };
 
@@ -60,7 +71,7 @@ public:
     // 取得／設定
 	int GetDeviceCount();
 	int GetDeviceInfo(std::vector<CInstanceId>* pInstanceIdList);
-	int GetData(float* data);
+	int GetData(pclData* data);
     void* GetFrameData();
 	bool m_StreamOn = false;
 

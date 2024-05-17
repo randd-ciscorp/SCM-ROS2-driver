@@ -19,11 +19,20 @@ public:
 
     std::shared_ptr<Device> cap_;
 
-    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> imgPub_;
+    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> rgbImgPub_;
+    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> depthImgPub_;
+    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> irImgPub_; 
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> pclPub_;
+
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoPub_;
+    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoDepthPub_;
+    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoRGBPub_;
+    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoIRPub_;
+
     std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
-    
+    std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_depth_;
+    std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_rgb_;
+    std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_ir_;
 
     std::string topic_prefix = "camera/depth";
 
@@ -46,10 +55,13 @@ private:
 
     void getFrame();
     void getInfo();
-    void pubDepthImage(float * data);
-    void pubDepthPtc(float * data);
+    void pubRGBImage(uint8_t *data);
+    void pubIrImage(uint8_t *data);
+    void pubDepthImage(float *data);
+    void pubDepthPtc(float *rbgData, uint8_t *xyzData);
 
     void DepthCallback();
+    void RGBDCallback();
     void InfoCallback();
 };
 }
