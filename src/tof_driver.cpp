@@ -25,11 +25,15 @@ ToFCVNode::ToFCVNode(const rclcpp::NodeOptions & node_options) : Node("tof_drive
     infoRGBPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topic_prefix + "/cam_rgb_info", 10);
     infoIRPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topic_prefix + "/cam_ir_info", 10);
 
-    cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-rgbd");
-    cinfo_rgb_ = std::make_shared<camera_info_manager::CameraInfoManager>(this);
-    cinfo_depth_ = std::make_shared<camera_info_manager::CameraInfoManager>(this);
-    cinfo_ir_ = std::make_shared<camera_info_manager::CameraInfoManager>(this);
+    cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-rgbd2");
+    cinfo_rgb_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-rgbd2");
+    cinfo_depth_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-rgbd2");
+    cinfo_ir_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-rgbd2");
     importParams();
+
+    publishHeader = std_msgs::msg::Header();
+    publishHeader.frame_id="cam_depth";
+    publishHeader.stamp = now();
 
     cap_ = std::make_shared<Device>();
     cap_->Connect("0x0001", 480, 640);
@@ -58,16 +62,36 @@ void ToFCVNode::importParams(){
     }
     std::string param_file_path = this->get_parameter("camera_params").as_string();
 
+    if(!this->has_parameter("camera_color_params")){
+        this->declare_parameter("camera_color_params", "package://tof1_driver/cam_param.yaml");
+    }
+    std::string color_param_file_path = this->get_parameter("camera_color_params").as_string();
+
     if (param_file_path != "")
     {
         RCLCPP_INFO(get_logger(), "Load parameters file: %s", param_file_path.c_str());
         if (cinfo_->validateURL(param_file_path))
         {
             cinfo_->loadCameraInfo(param_file_path);
+            cinfo_depth_->loadCameraInfo(param_file_path);
+            cinfo_ir_->loadCameraInfo(param_file_path);
         }
         else
         {
             RCLCPP_WARN(get_logger(), "Could not find the parameter file at: %s", param_file_path.c_str());
+        }
+    }
+
+    if (color_param_file_path != "")
+    {
+        RCLCPP_INFO(get_logger(), "Load parameters file: %s", color_param_file_path.c_str());
+        if (cinfo_rgb_->validateURL(color_param_file_path))
+        {
+            cinfo_rgb_->loadCameraInfo(param_file_path);
+        }
+        else
+        {
+            RCLCPP_WARN(get_logger(), "Could not find the parameter file at: %s", color_param_file_path.c_str());
         }
     }
 }
@@ -111,16 +135,13 @@ void ToFCVNode::normalize(float* vec){
 }
 
 void ToFCVNode::pubRGBImage(uint8_t *data){
-    auto header = std_msgs::msg::Header();
-    header.frame_id = "camera_rgb";
-    header.stamp = this->get_clock()->now();
 
     auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_rgb_->getCameraInfo());
-    infoMsg->header = header;
+    infoMsg->header = publishHeader;
     infoRGBPub_->publish(*infoMsg);
 
     auto imgMsg = sensor_msgs::msg::Image();
-    imgMsg.header = header;
+    imgMsg.header = publishHeader;
     imgMsg.width = width_;
     imgMsg.height = height_;
     imgMsg.encoding = sensor_msgs::image_encodings::RGB8;
@@ -131,16 +152,13 @@ void ToFCVNode::pubRGBImage(uint8_t *data){
 }
 
 void ToFCVNode::pubIrImage(uint8_t *data){
-    auto header = std_msgs::msg::Header();
-    header.frame_id = "camera";
-    header.stamp = this->get_clock()->now();
 
     auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_ir_->getCameraInfo());
-    infoMsg->header = header;
+    infoMsg->header = publishHeader;
     infoIRPub_->publish(*infoMsg);
 
     auto imgMsg = sensor_msgs::msg::Image();
-    imgMsg.header = header;
+    imgMsg.header = publishHeader;
     imgMsg.width = width_;
     imgMsg.height = height_;
     imgMsg.encoding = sensor_msgs::image_encodings::MONO8;
@@ -159,18 +177,14 @@ void ToFCVNode::pubDepthImage(float* data){
     {
         depth_u8[i] = (uchar)xyzData_[2][i];
     }
-    // Msg header
-    auto header = std_msgs::msg::Header();
-    header.frame_id = "camera_depth";
-    header.stamp = this->get_clock()->now();
 
     auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_depth_->getCameraInfo());
-    infoMsg->header = header;
+    infoMsg->header = publishHeader;
     infoDepthPub_->publish(*infoMsg);
 
     // 2D Image publishing
     auto imgMsg = sensor_msgs::msg::Image();
-    imgMsg.header = header;
+    imgMsg.header = publishHeader;
     imgMsg.width = width_;
     imgMsg.height = height_;
     imgMsg.encoding = sensor_msgs::image_encodings::MONO8;
@@ -181,15 +195,9 @@ void ToFCVNode::pubDepthImage(float* data){
 }
 
 void ToFCVNode::pubDepthPtc(float *xyzData, uint8_t *rgbData){
-    // Header
-    auto header = std_msgs::msg::Header();
-    rclcpp::Time time;
-    header.stamp = this->get_clock()->now();
-    header.frame_id = "cam_depth";
-
     // 3D Point clouds message
     auto ptcMsg = sensor_msgs::msg::PointCloud2();
-    ptcMsg.header = header;
+    ptcMsg.header = publishHeader;
     ptcMsg.width = width_;
     ptcMsg.height = height_;
     ptcMsg.is_bigendian = true;
@@ -205,11 +213,11 @@ void ToFCVNode::pubDepthPtc(float *xyzData, uint8_t *rgbData){
         sensor_msgs::PointCloud2Iterator<uint8_t> iter_rgb(ptcMsg, "rgb");
         ptcModif.resize(ptcMsg.width * ptcMsg.height);
 
-        //fill data
         for (size_t i = 0; i < ptcMsg.height * ptcMsg.width; ++i, ++iter_x, ++iter_y, ++iter_z, ++iter_rgb)
         {
             float z = xyzData[i * 3 + 2];
-            if (z <= 0)
+            bool isRGBNull = rgbData[i * 3+2] == 0 && rgbData[i * 3+1] == 0 && rgbData[i * 3+0] == 0;
+            if (z <= 0 || isRGBNull)
             {
                 *iter_x = std::numeric_limits<float>::quiet_NaN();
                 *iter_y = std::numeric_limits<float>::quiet_NaN();       
@@ -261,23 +269,28 @@ void ToFCVNode::pubDepthPtc(float *xyzData, uint8_t *rgbData){
 void ToFCVNode::RGBDCallback(){
     
     int nbBytePerPxl = sizeof(float)*3 + sizeof(uint8_t)*3 + sizeof(uint8_t);
-    
+    pclData *structFrameData = new pclData[width_ * height_];
+
     while (rclcpp::ok() && isConnected())
     {
         uint8_t *rgb_ptr = new uint8_t[width_ * height_ * 3];
         float *xyz_ptr = new float[width_ * height_ * 3];
         uint8_t *ir_ptr = new uint8_t[width_ * height_];
 
+        
         pclData *structFrameData = new pclData[width_ * height_];
         cap_->GetData(structFrameData);
 
         // Cam Info
         auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());
         infoMsg->header.frame_id = "camera";
-        infoMsg->header.stamp = this->get_clock()->now();
+        infoMsg->header.stamp = now();
         infoPub_->publish(*infoMsg);
+
+        publishHeader.stamp = infoMsg->header.stamp;
         
         // Split XYZ RGB IR
+        #pragma omp for
         for (id_t i = 0; i < width_ * height_; i++)
         {
             xyz_ptr[3*i] = structFrameData[i].x;
@@ -286,13 +299,14 @@ void ToFCVNode::RGBDCallback(){
             rgb_ptr[3*i] = structFrameData[i].r;
             rgb_ptr[3*i+1] = structFrameData[i].g;
             rgb_ptr[3*i+2] = structFrameData[i].b;
-            ir_ptr[3*i+2] = structFrameData[i].a;
+            ir_ptr[i] = structFrameData[i].a;
         }
 
         pubRGBImage(rgb_ptr);
-        //pubIrImage(ir_ptr);
+        pubIrImage(ir_ptr);
         pubDepthImage(xyz_ptr);
         pubDepthPtc(xyz_ptr, rgb_ptr);
     }
+    delete structFrameData;
 }
 }

@@ -13,6 +13,12 @@ find_package(sensor_msgs REQUIRED)
 find_package(camera_info_manager REQUIRED)
 find_package(tf2 REQUIRED)
 
+find_package(OpenMP REQUIRED)
+if(OpenMP_FOUND)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
+
 include_directories(include)
 
 add_executable(tof_node src/tof_node.cpp src/tof_driver.cpp src/Device.cpp)

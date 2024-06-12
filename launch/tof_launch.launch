@@ -1,6 +1,7 @@
 <launch>
     <node pkg="tof1_driver" exec="tof_node" name="tof_node" namespace="tof1_driver">
         <param name="camera_params" value="package://tof1_driver/cam_param.yaml"/>
+        <param name="camera_color_params" value="package://tof1_driver/cam_color.yaml"/>
     </node>
 
     <node pkg="tf2_ros" exec="static_transform_publisher" name="camera_base_to_camera" args="0 0 0.03 0 0 0 camera_base camera" />

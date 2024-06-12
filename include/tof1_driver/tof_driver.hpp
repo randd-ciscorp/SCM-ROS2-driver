@@ -34,6 +34,8 @@ public:
     std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_rgb_;
     std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_ir_;
 
+    std_msgs::msg::Header publishHeader;
+
     std::string topic_prefix = "camera/depth";
 
     rclcpp::TimerBase::SharedPtr timer_;
