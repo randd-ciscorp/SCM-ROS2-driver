@@ -15,21 +15,21 @@ namespace tof_driver
 {
 
 ToFCVNode::ToFCVNode(const rclcpp::NodeOptions & node_options) : Node("tof_driver", node_options){
-    imgPub_ = create_publisher<sensor_msgs::msg::Image>(topic_prefix + "/img_depth", 10);
-    pclPub_ = create_publisher<sensor_msgs::msg::PointCloud2>(topic_prefix + "/pcl_depth", 10);
-    infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topic_prefix + "/cam_info", 10);
+    imgPub_ = create_publisher<sensor_msgs::msg::Image>(topicPrefix_ + "/img_depth", 10);
+    pclPub_ = create_publisher<sensor_msgs::msg::PointCloud2>(topicPrefix_ + "/pcl_depth", 10);
+    infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicPrefix_ + "/cam_info", 10);
 
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm1-tof");
     importParams();
 
     cap_ = std::make_shared<Device>();
-    cap_->Connect("0x0001", 480, 640);
+    cap_->connect("0x0001", 480, 640);
     width_ = 640;
     height_ = 480;
 
-    std::cout << "Is connected: " << cap_->IsConnected() << std::endl; 
+    std::cout << "Is connected: " << cap_->isConnected() << std::endl; 
     getInfo();
-    if (cap_->IsConnected())
+    if (cap_->isConnected())
     {
         this->start();
     }
@@ -61,11 +61,11 @@ void ToFCVNode::importParams(){
 
 void ToFCVNode::start(){
     std::cout << "Start Cam callback" << std::endl;
-    timer_ = this->create_wall_timer(30ms, std::bind(&ToFCVNode::DepthCallback, this));
+    timer_ = this->create_wall_timer(30ms, std::bind(&ToFCVNode::depthCallback, this));
 }
 
-void ToFCVNode::InfoCallback(){
-    while(rclcpp::ok() && cap_->IsConnected()){
+void ToFCVNode::infoCallback(){
+    while(rclcpp::ok() && cap_->isConnected()){
         auto camInfo = sensor_msgs::msg::CameraInfo();
         camInfo.width = width_;
         camInfo.height = height_;
@@ -85,7 +85,7 @@ std::vector<std::vector<float>> ToFCVNode::splitXYZ(float* data){
 }
 
 void ToFCVNode::normalize(float* vec){
-    for (size_t i = 0; i < width_ * height_; i++)
+    for (int i = 0; i < width_ * height_; i++)
     {
         //7.5m -> max distance
         vec[i] = vec[i] / 7.5 * 255.; 
@@ -168,12 +168,12 @@ void ToFCVNode::pubDepthPtc(float * data){
         pclPub_->publish(ptcMsg);
 }
 
-void ToFCVNode::DepthCallback(){
+void ToFCVNode::depthCallback(){
     cv::Mat dFrame;
     float *frameData = (float*)malloc(width_*height_*3*sizeof(float));
-    while (rclcpp::ok() && cap_->IsConnected())
+    while (rclcpp::ok() && cap_->isConnected())
     {
-        cap_->GetData(frameData);
+        cap_->getData(frameData);
 
         // Cam Info
         auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());

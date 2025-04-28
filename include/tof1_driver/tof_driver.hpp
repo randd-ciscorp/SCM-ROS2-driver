@@ -32,11 +32,10 @@ private:
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoPub_;
     std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
 
-    std::string topic_prefix = "camera/depth";
-    std::string camera_base_frame_ = "camera_base";
-    std::string depth_camera_frame_ = "depth_camera_link";
+    std::string topicPrefix_ = "camera/depth";
+    std::string cameraBaseFrame_ = "camera_base";
+    std::string depthCameraFrame_ = "depth_camera_link";
 
-    bool isConnected();
     void importParams();
 
     void normalize(float* data);
@@ -48,7 +47,7 @@ private:
     void pubDepthImage(float * data);
     void pubDepthPtc(float * data);
 
-    void DepthCallback();
-    void InfoCallback();
+    void depthCallback();
+    void infoCallback();
 };
 }
