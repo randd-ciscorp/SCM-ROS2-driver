@@ -62,13 +62,14 @@ public:
 	int GetDeviceInfo(std::vector<CInstanceId>* pInstanceIdList);
 	int GetData(float* data);
     void* GetFrameData();
-	bool m_StreamOn = false;
+    bool IsConnected();
 
 private:
-	int m_FD = -1;
+	int FD = -1;
 
+    bool streamOn_ = false;
 	// thread
-	struct ThreadParam m_Param;
+	struct ThreadParam thrdParams_;
 	
     void init_mmap();
 

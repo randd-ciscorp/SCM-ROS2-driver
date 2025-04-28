@@ -22,22 +22,17 @@ ToFCVNode::ToFCVNode(const rclcpp::NodeOptions & node_options) : Node("tof_drive
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm1-tof");
     importParams();
 
-    
     cap_ = std::make_shared<Device>();
     cap_->Connect("0x0001", 480, 640);
     width_ = 640;
     height_ = 480;
 
-    std::cout << "Is connected: " << isConnected() << std::endl; 
+    std::cout << "Is connected: " << cap_->IsConnected() << std::endl; 
     getInfo();
-    if (isConnected())
+    if (cap_->IsConnected())
     {
         this->start();
     }
-}
-
-bool ToFCVNode::isConnected(){
-    return cap_->m_StreamOn;
 }
 
 void ToFCVNode::getInfo(){
@@ -70,7 +65,7 @@ void ToFCVNode::start(){
 }
 
 void ToFCVNode::InfoCallback(){
-    while(rclcpp::ok() && isConnected()){
+    while(rclcpp::ok() && cap_->IsConnected()){
         auto camInfo = sensor_msgs::msg::CameraInfo();
         camInfo.width = width_;
         camInfo.height = height_;
@@ -176,7 +171,7 @@ void ToFCVNode::pubDepthPtc(float * data){
 void ToFCVNode::DepthCallback(){
     cv::Mat dFrame;
     float *frameData = (float*)malloc(width_*height_*3*sizeof(float));
-    while (rclcpp::ok() && isConnected())
+    while (rclcpp::ok() && cap_->IsConnected())
     {
         cap_->GetData(frameData);
 
