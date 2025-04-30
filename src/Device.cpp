@@ -1,18 +1,17 @@
 #include "tof1_driver/Device.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
-#include <iostream>
-
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
-#include <sys/fcntl.h>
 #include <sys/mman.h>
-
 #include <linux/videodev2.h>
+
+#include <errno.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
+#include <string>
 
 int Device::errnoExit(const char *s){
     fprintf(stderr, "'%s': '%d, %s \n", s, errno, strerror(errno));
@@ -75,14 +74,9 @@ void Device::initMmap(){
     }
 }
 
-int Device::connect(const char* serial_number, int height, int width)
+int Device::connect(int height, int width)
 {
     const char* deviceName = "/dev/video0";
-
-    if (serial_number == NULL)
-    {
-        return E_POINTER;
-    }
 
     // Open
     fd_ = open(deviceName, O_RDWR | O_NONBLOCK);
@@ -90,19 +84,6 @@ int Device::connect(const char* serial_number, int height, int width)
     {
         errnoExit("Opening");
     }
-    
-    // Capability
-    struct v4l2_capability cap;
-    if (xioctl(fd_, VIDIOC_QUERYCAP, &cap) < 0)
-    {
-        errnoExit("Capability query");
-    }
-    printf("Driver: %s \n", cap.driver);
-    printf("Card: %s \n", cap.card);
-    printf("  Version: %u.%u.%u",
-        (cap.version >> 16) & 0xFF,
-        (cap.version >> 8)  & 0xFF,
-        (cap.version)       & 0xFF);
     
     // Format
     struct v4l2_format fmt;
@@ -183,6 +164,41 @@ void* Device::getFrameData(){
     }
 
     return nullptr;
+}
+
+DevInfo Device::getInfo()
+{
+    DevInfo devInfo;
+
+    // Capability
+    struct v4l2_capability cap;
+    if (xioctl(fd_, VIDIOC_QUERYCAP, &cap) < 0)
+    {
+        errnoExit("Capability query");
+    }
+    printf("Driver: %s \n", cap.driver);
+    printf("Card: %s \n", cap.card);
+    printf("  Version: %u.%u.%u",
+        (cap.version >> 16) & 0xFF,
+        (cap.version >> 8)  & 0xFF,
+        (cap.version)       & 0xFF);
+
+    
+    struct v4l2_format fmt {};
+    fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    if (xioctl(fd_, VIDIOC_G_FMT, &fmt) < 0)
+    {
+        errnoExit("Get device format");
+        return DevInfo();
+    }    
+
+    devInfo.devName = std::string(reinterpret_cast<char*>(cap.card));
+    devInfo.driverVers = std::string(reinterpret_cast<char*>(cap.driver));
+    devInfo.sn = std::string(reinterpret_cast<char*>(cap.bus_info));
+    devInfo.width = fmt.fmt.pix.width;
+    devInfo.height = fmt.fmt.pix.height;
+
+    return devInfo;
 }
 
 int Device::getData(float* data){

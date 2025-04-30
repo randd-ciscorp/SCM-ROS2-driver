@@ -1,4 +1,7 @@
-#include <opencv2/opencv.hpp>
+#include <vector>
+#include <memory>
+#include <string>
+
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -41,8 +44,7 @@ private:
     void normalize(float* data);
     std::vector<std::vector<float>> splitXYZ(float* data);
 
-    void getFrame();
-    void getInfo();
+    void dispInfo(DevInfo devInfo);
 
     void pubDepthImage(float * data);
     void pubDepthPtc(float * data);

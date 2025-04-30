@@ -1,13 +1,13 @@
-#include <rclcpp/rclcpp.hpp>
-#include <opencv2/opencv.hpp>
+#include "tof1_driver/tof_driver.hpp"
+
 #include <string>
 #include <chrono>
 #include <vector>
 
+#include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
-
-#include "tof1_driver/tof_driver.hpp"
+#include <opencv2/opencv.hpp>
 
 using namespace std::chrono_literals;
 
@@ -23,20 +23,29 @@ ToFCVNode::ToFCVNode(const rclcpp::NodeOptions & node_options) : Node("tof_drive
     importParams();
 
     cap_ = std::make_shared<Device>();
-    cap_->connect("0x0001", 480, 640);
-    width_ = 640;
-    height_ = 480;
+    cap_->connect(480, 640);
+    DevInfo devInfo = cap_->getInfo();
+    width_ = devInfo.width;
+    height_ = devInfo.height;
 
-    std::cout << "Is connected: " << cap_->isConnected() << std::endl; 
-    getInfo();
     if (cap_->isConnected())
     {
+        dispInfo(devInfo);
         this->start();
+    }
+    else
+    {
+        RCLCPP_ERROR(get_logger(), "Camera connection failed");
     }
 }
 
-void ToFCVNode::getInfo(){
-    printf("info");
+void ToFCVNode::dispInfo(DevInfo devInfo){
+    RCLCPP_INFO(get_logger(), "Connected to:");
+    RCLCPP_INFO(get_logger(), "Device name: %s", devInfo.devName.c_str());
+    RCLCPP_INFO(get_logger(), "Driver version: %s", devInfo.driverVers.c_str());
+    RCLCPP_INFO(get_logger(), "Serial Number: %s", devInfo.sn.c_str());
+    RCLCPP_INFO(get_logger(), "Width: %d", devInfo.width);
+    RCLCPP_INFO(get_logger(), "Height: %d", devInfo.height);
 }
 
 void ToFCVNode::importParams(){

@@ -1,9 +1,11 @@
 #include <sys/ioctl.h>
 
+#include <cerrno>
+#include <cstddef>
+#include <cstdint>
 #include <string>
-#include <vector>
 
-#define N_CAP_BUF	3
+#define N_CAP_BUF	4
 
 // Error type
 #define S_OK			0
@@ -27,20 +29,33 @@ struct RequestBuffer
     size_t length;
 };
 
+struct DevInfo
+{
+    std::string devName;
+    std::string driverVers;
+    std::string sn;
+
+    int width;
+    int height;
+};
+
 class Device
 { 
 public:
     Device();
     ~Device();
 
-    int connect(const char* serialNum, int height, int width);
+    int connect(int height, int width);
     void disconnect();
 
+    DevInfo getInfo();
 	int getData(float* data);
     void* getFrameData();
     bool isConnected();
 
 private:
+    DevInfo devInfo_;
+
     int	fd_ = -1;
 
 	u_int8_t *data_;
