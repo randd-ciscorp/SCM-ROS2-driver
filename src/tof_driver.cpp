@@ -30,17 +30,18 @@ ToFCVNode::ToFCVNode(const rclcpp::NodeOptions & node_options) : Node("tof_drive
 
     if (cap_->isConnected())
     {
+        RCLCPP_INFO(get_logger(), "Camera connected");
         dispInfo(devInfo);
         this->start();
     }
     else
     {
         RCLCPP_ERROR(get_logger(), "Camera connection failed");
+        rclcpp::shutdown();
     }
 }
 
-void ToFCVNode::dispInfo(DevInfo devInfo){
-    RCLCPP_INFO(get_logger(), "Connected to:");
+void ToFCVNode::dispInfo(DevInfo devInfo) const{
     RCLCPP_INFO(get_logger(), "Device name: %s", devInfo.devName.c_str());
     RCLCPP_INFO(get_logger(), "Driver version: %s", devInfo.driverVers.c_str());
     RCLCPP_INFO(get_logger(), "Serial Number: %s", devInfo.sn.c_str());
@@ -63,54 +64,38 @@ void ToFCVNode::importParams(){
         }
         else
         {
-            RCLCPP_WARN(get_logger(), "Could not find the parameter file at: %s", param_file_path.c_str());
+            RCLCPP_ERROR(get_logger(), "Could not find the parameter file at: %s", param_file_path.c_str());
+            rclcpp::shutdown();
         }
     }
 }
 
 void ToFCVNode::start(){
-    std::cout << "Start Cam callback" << std::endl;
+    RCLCPP_INFO(get_logger(), "Start capturing");
     timer_ = this->create_wall_timer(30ms, std::bind(&ToFCVNode::depthCallback, this));
 }
 
-void ToFCVNode::infoCallback(){
-    while(rclcpp::ok() && cap_->isConnected()){
-        auto camInfo = sensor_msgs::msg::CameraInfo();
-        camInfo.width = width_;
-        camInfo.height = height_;
-    }
-}
-
-std::vector<std::vector<float>> ToFCVNode::splitXYZ(float* data){
+XYZData ToFCVNode::splitXYZ(float* data){
     int size = width_ * height_;
-    std::vector<std::vector<float>> output(3, std::vector<float>(size, 0));
-    for (int i = 0; i < size*3; i+=3)
+    XYZData output;
+    output.x.resize(width_ * height_);
+    output.y.resize(width_ * height_);
+    output.z.resize(width_ * height_);
+    for (int i = 0, j = 0; i < size * 3; i+=3, j++)
     {
-        output[0][i/3] = data[i]; // X
-        output[1][i/3] = data[i+1]; // Y
-        output[2][i/3] = data[i+2]; // Z
+        output.x[i/3] = data[i]; // X
+        output.y[i/3] = data[i+1]; // Y
+        output.z[i/3] = data[i+2]; // Z
     }
     return output;
-}
-
-void ToFCVNode::normalize(float* vec){
-    for (int i = 0; i < width_ * height_; i++)
-    {
-        //7.5m -> max distance
-        vec[i] = vec[i] / 7.5 * 255.; 
-    }
 }
 
 void ToFCVNode::pubDepthImage(float* data){
     xyzData_ = splitXYZ(data);
     
-    normalize(xyzData_[2].data());
-    std::vector<uchar> depth_u8 = std::vector<uchar>(xyzData_[2].size());
-    for (size_t i = 0; i < xyzData_[2].size(); i++)
-    {
-        depth_u8[i] = (uchar)xyzData_[2][i];
-    }
-
+    cv::Mat depth_u8 = cv::Mat(height_, width_, CV_32FC1, xyzData_.z.data());
+    depth_u8.convertTo(depth_u8, CV_8UC1, 255./ MAX_DEPTH);
+    
     // Grey -> Hue
     cv::Mat hueDepth(height_, width_, CV_8UC3);
     cv::applyColorMap(depth_u8, hueDepth, cv::COLORMAP_JET);
@@ -151,11 +136,11 @@ void ToFCVNode::pubDepthPtc(float * data){
 
         sensor_msgs::PointCloud2Modifier ptcModif(ptcMsg);
         ptcModif.setPointCloud2FieldsByString(1, "xyz");
+        ptcModif.resize(ptcMsg.width * ptcMsg.height);
 
         sensor_msgs::PointCloud2Iterator<float> iter_x(ptcMsg, "x");
         sensor_msgs::PointCloud2Iterator<float> iter_y(ptcMsg, "y");
         sensor_msgs::PointCloud2Iterator<float> iter_z(ptcMsg, "z");
-        ptcModif.resize(ptcMsg.width * ptcMsg.height);
 
         //fill data
         for (size_t i = 0; i < ptcMsg.height * ptcMsg.width; i++, ++iter_x, ++iter_y, ++iter_z)
@@ -179,10 +164,10 @@ void ToFCVNode::pubDepthPtc(float * data){
 
 void ToFCVNode::depthCallback(){
     cv::Mat dFrame;
-    float *frameData = (float*)malloc(width_*height_*3*sizeof(float));
+    std::vector<float> frameData = std::vector<float>(width_*height_*3);    
     while (rclcpp::ok() && cap_->isConnected())
     {
-        cap_->getData(frameData);
+        cap_->getData(frameData.data());
 
         // Cam Info
         auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());
@@ -191,10 +176,10 @@ void ToFCVNode::depthCallback(){
         infoPub_->publish(*infoMsg);
         
         // 2D Image
-        pubDepthImage(frameData);
+        pubDepthImage(frameData.data());
 
         // 3D Image
-        pubDepthPtc(frameData);
+        pubDepthPtc(frameData.data());
     }
 }
 }

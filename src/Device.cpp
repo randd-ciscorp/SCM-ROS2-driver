@@ -13,7 +13,7 @@
 #include <iostream>
 #include <string>
 
-int Device::errnoExit(const char *s){
+int Device::errnoExit(const char *s) const{
     fprintf(stderr, "'%s': '%d, %s \n", s, errno, strerror(errno));
     exit(EXIT_FAILURE);
     return errno;
@@ -132,41 +132,7 @@ void Device::disconnect(){
     close(fd_);
 }
 
-void* Device::getFrameData(){
-    fd_set fds;
-    FD_ZERO(&fds);
-    FD_SET(fd_, &fds);
-
-    struct timeval tv{};
-    tv.tv_sec = 2;
-    if (select(fd_ + 1, &fds, NULL, NULL, &tv) <= 0)
-    {
-        errnoExit("Frame capture timeout");
-    }
-
-    if(FD_ISSET(fd_, &fds)){
-
-        struct v4l2_buffer in_buf{};
-        in_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        in_buf.memory = V4L2_MEMORY_MMAP;
-
-        if (xioctl(fd_, VIDIOC_DQBUF, &in_buf) < 0)
-        {
-            errnoExit("DQbuf");
-        }
-
-        if (xioctl(fd_, VIDIOC_QBUF, &in_buf) < 0)
-        {
-            errnoExit("QBuf");
-        }
-
-        return buffers_[in_buf.index].data;
-    }
-
-    return nullptr;
-}
-
-DevInfo Device::getInfo()
+DevInfo Device::getInfo() const
 {
     DevInfo devInfo;
 
@@ -206,9 +172,7 @@ int Device::getData(float* data){
     FD_ZERO(&fds);
     FD_SET(fd_, &fds);
 
-    struct timeval tv{};
-    tv.tv_sec = 2;
-    if (select(fd_ + 1, &fds, NULL, NULL, &tv) <= 0)
+    if (select(fd_ + 1, &fds, NULL, NULL, NULL) <= 0)
     {
         errnoExit("Frame capture timeout");
     }
@@ -237,7 +201,7 @@ int Device::getData(float* data){
     return -1;
 }
 
-bool Device::isConnected()
+bool Device::isConnected() const
 {
     return isStreamOn_;
 }

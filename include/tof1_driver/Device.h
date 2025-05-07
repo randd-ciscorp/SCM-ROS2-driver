@@ -48,10 +48,9 @@ public:
     int connect(int height, int width);
     void disconnect();
 
-    DevInfo getInfo();
+    DevInfo getInfo() const;
 	int getData(float* data);
-    void* getFrameData();
-    bool isConnected();
+    bool isConnected() const;
 
 private:
     DevInfo devInfo_;
@@ -66,5 +65,5 @@ private:
 	
     void initMmap();
 
-	int errnoExit(const char *s);
+	int errnoExit(const char *s) const;
 };

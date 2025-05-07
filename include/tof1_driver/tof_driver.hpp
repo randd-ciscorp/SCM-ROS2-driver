@@ -10,8 +10,17 @@
 
 #include "tof1_driver/Device.h"
 
+#define MAX_DEPTH 7.5
+
 namespace tof_driver
 {
+
+struct XYZData
+{
+    std::vector<float> x;
+    std::vector<float> y;
+    std::vector<float> z;
+};
 
 class ToFCVNode : public rclcpp::Node
 {
@@ -24,7 +33,7 @@ private:
     int width_;
     int height_;
 
-    std::vector<std::vector<float>> xyzData_;
+    XYZData xyzData_;
 
     rclcpp::TimerBase::SharedPtr timer_;
     
@@ -41,10 +50,9 @@ private:
 
     void importParams();
 
-    void normalize(float* data);
-    std::vector<std::vector<float>> splitXYZ(float* data);
+    XYZData splitXYZ(float* data);
 
-    void dispInfo(DevInfo devInfo);
+    void dispInfo(DevInfo devInfo) const;
 
     void pubDepthImage(float * data);
     void pubDepthPtc(float * data);
