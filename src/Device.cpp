@@ -19,6 +19,11 @@ int Device::errnoExit(const char *s) const{
     return errno;
 }
 
+int errnoPrint(const char *s){
+    fprintf(stderr, "'%s': '%d, %s \n", s, errno, strerror(errno));
+    return errno;
+}
+
 Device::Device()
 {
     fd_ = -1;
@@ -26,6 +31,7 @@ Device::Device()
     buffers_ = nullptr;
     buffers_ = nullptr;
     bufInd_ = 0;
+    isStreamOn_ = false;
 }
 
 Device::~Device()
@@ -82,7 +88,8 @@ int Device::connect(int height, int width)
     fd_ = open(deviceName, O_RDWR | O_NONBLOCK);
     if (fd_ < 0)
     {
-        errnoExit("Opening");
+        fprintf(stderr, "Could not find camera. Is camera connected? \n");
+        return -1;
     }
     
     // Format
@@ -174,28 +181,28 @@ int Device::getData(float* data){
 
     if (select(fd_ + 1, &fds, NULL, NULL, NULL) <= 0)
     {
-        errnoExit("Frame capture timeout");
+        //errnoExit("Frame capture timeout");
+        return errnoPrint("Frame capture timeout");
     }
 
     if(FD_ISSET(fd_, &fds)){
-
         struct v4l2_buffer in_buf{};
         in_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         in_buf.memory = V4L2_MEMORY_MMAP;
 
         if (xioctl(fd_, VIDIOC_DQBUF, &in_buf) < 0)
         {
-            errnoExit("DQbuf");
+            return errnoPrint("DQBuf failed");
         }
         
         memcpy((void*)data, buffers_[in_buf.index].data, buffers_[in_buf.index].length);
 
         if (xioctl(fd_, VIDIOC_QBUF, &in_buf) < 0)
         {
-            errnoExit("QBuf");
+            return errnoPrint("QBuf failed");
         }
 
-        return 1;
+        return 0;
     }
 
     return -1;

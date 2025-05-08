@@ -8,6 +8,8 @@
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <camera_info_manager/camera_info_manager.hpp>
 
+#include <opencv2/opencv.hpp>
+
 #include "tof1_driver/Device.h"
 
 #define MAX_DEPTH 7.5
@@ -33,11 +35,17 @@ private:
     int width_;
     int height_;
 
+    cv::Mat greyDepth_;
+    cv::Mat hueDepth_;
+
+    sensor_msgs::msg::PointCloud2 ptcMsg_;
+    sensor_msgs::msg::Image imgMsg_;
+
     XYZData xyzData_;
 
     rclcpp::TimerBase::SharedPtr timer_;
     
-    std::shared_ptr<Device> cap_;
+    std::unique_ptr<Device> cap_;
 
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> imgPub_;
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> pclPub_;

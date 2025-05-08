@@ -22,16 +22,27 @@ ToFCVNode::ToFCVNode(const rclcpp::NodeOptions & node_options) : Node("tof_drive
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm1-tof");
     importParams();
 
-    cap_ = std::make_shared<Device>();
+    cap_ = std::make_unique<Device>();
     cap_->connect(480, 640);
-    DevInfo devInfo = cap_->getInfo();
-    width_ = devInfo.width;
-    height_ = devInfo.height;
 
     if (cap_->isConnected())
     {
         RCLCPP_INFO(get_logger(), "Camera connected");
+
+        DevInfo devInfo = cap_->getInfo();
         dispInfo(devInfo);
+        width_ = devInfo.width;
+        height_ = devInfo.height;
+
+        // Formating pointcloud message
+        ptcMsg_.width = width_;
+        ptcMsg_.height = height_;
+        ptcMsg_.is_bigendian = true;     
+        sensor_msgs::PointCloud2Modifier ptcModif(ptcMsg_);
+        ptcModif.setPointCloud2FieldsByString(1, "xyz");
+        ptcModif.resize(ptcMsg_.width * ptcMsg_.height);
+
+        // Start capturing
         this->start();
     }
     else
@@ -64,7 +75,7 @@ void ToFCVNode::importParams(){
         }
         else
         {
-            RCLCPP_ERROR(get_logger(), "Could not find the parameter file at: %s", param_file_path.c_str());
+            RCLCPP_ERROR(get_logger(), "Could not find parameter file at: %s", param_file_path.c_str());
             rclcpp::shutdown();
         }
     }
@@ -81,11 +92,11 @@ XYZData ToFCVNode::splitXYZ(float* data){
     output.x.resize(width_ * height_);
     output.y.resize(width_ * height_);
     output.z.resize(width_ * height_);
-    for (int i = 0, j = 0; i < size * 3; i+=3, j++)
+    for (int i = 0, j = 0; j < size; i+=3, j++)
     {
-        output.x[i/3] = data[i]; // X
-        output.y[i/3] = data[i+1]; // Y
-        output.z[i/3] = data[i+2]; // Z
+        output.x[j] = data[i]; // X
+        output.y[j] = data[i+1]; // Y
+        output.z[j] = data[i+2]; // Z
     }
     return output;
 }
@@ -93,13 +104,13 @@ XYZData ToFCVNode::splitXYZ(float* data){
 void ToFCVNode::pubDepthImage(float* data){
     xyzData_ = splitXYZ(data);
     
-    cv::Mat depth_u8 = cv::Mat(height_, width_, CV_32FC1, xyzData_.z.data());
-    depth_u8.convertTo(depth_u8, CV_8UC1, 255./ MAX_DEPTH);
+    greyDepth_ = cv::Mat(height_, width_, CV_32FC1, xyzData_.z.data());
+    greyDepth_.convertTo(greyDepth_, CV_8UC1, 255./ MAX_DEPTH);
     
     // Grey -> Hue
-    cv::Mat hueDepth(height_, width_, CV_8UC3);
-    cv::applyColorMap(depth_u8, hueDepth, cv::COLORMAP_JET);
-    if(!hueDepth.isContinuous()){
+    hueDepth_ = cv::Mat(height_, width_, CV_8UC3);
+    cv::applyColorMap(greyDepth_, hueDepth_, cv::COLORMAP_JET);
+    if(!hueDepth_.isContinuous()){
         printf("NOT CONTINOUS");
     }
 
@@ -109,15 +120,15 @@ void ToFCVNode::pubDepthImage(float* data){
     header.stamp = this->get_clock()->now();
 
     // 2D Image publishing
-    auto imgMsg = sensor_msgs::msg::Image();
-    imgMsg.header = header;
-    imgMsg.width = width_;
-    imgMsg.height = height_;
-    imgMsg.encoding = sensor_msgs::image_encodings::TYPE_8UC3;
-    imgMsg.step = width_ * sizeof(uchar)*3;
-    imgMsg.is_bigendian = true;
-    imgMsg.data.assign(hueDepth.data, hueDepth.data + hueDepth.rows*hueDepth.cols*3);
-    imgPub_->publish(std::move(imgMsg));
+    imgMsg_ = sensor_msgs::msg::Image();
+    imgMsg_.header = header;
+    imgMsg_.width = width_;
+    imgMsg_.height = height_;
+    imgMsg_.encoding = sensor_msgs::image_encodings::TYPE_8UC3;
+    imgMsg_.step = width_ * sizeof(uchar)*3;
+    imgMsg_.is_bigendian = true;
+    imgMsg_.data.assign(hueDepth_.data, hueDepth_.data + hueDepth_.rows*hueDepth_.cols*3);
+    imgPub_->publish(std::move(imgMsg_));
 }
 
 void ToFCVNode::pubDepthPtc(float * data){
@@ -126,24 +137,14 @@ void ToFCVNode::pubDepthPtc(float * data){
         rclcpp::Time time;
         header.stamp = this->get_clock()->now();
         header.frame_id = "cam_depth";
+        ptcMsg_.header = header;
 
-        // 3D Point clouds message
-        auto ptcMsg = sensor_msgs::msg::PointCloud2();
-        ptcMsg.header = header;
-        ptcMsg.width = width_;
-        ptcMsg.height = height_;
-        ptcMsg.is_bigendian = true;
-
-        sensor_msgs::PointCloud2Modifier ptcModif(ptcMsg);
-        ptcModif.setPointCloud2FieldsByString(1, "xyz");
-        ptcModif.resize(ptcMsg.width * ptcMsg.height);
-
-        sensor_msgs::PointCloud2Iterator<float> iter_x(ptcMsg, "x");
-        sensor_msgs::PointCloud2Iterator<float> iter_y(ptcMsg, "y");
-        sensor_msgs::PointCloud2Iterator<float> iter_z(ptcMsg, "z");
+        sensor_msgs::PointCloud2Iterator<float> iter_x(ptcMsg_, "x");
+        sensor_msgs::PointCloud2Iterator<float> iter_y(ptcMsg_, "y");
+        sensor_msgs::PointCloud2Iterator<float> iter_z(ptcMsg_, "z");
 
         //fill data
-        for (size_t i = 0; i < ptcMsg.height * ptcMsg.width; i++, ++iter_x, ++iter_y, ++iter_z)
+        for (size_t i = 0; i < ptcMsg_.height * ptcMsg_.width; i++, ++iter_x, ++iter_y, ++iter_z)
         {
             float z = data[i * 3 + 2];
             if (z <= 0)
@@ -159,15 +160,19 @@ void ToFCVNode::pubDepthPtc(float * data){
             }
         }
 
-        pclPub_->publish(ptcMsg);
+        pclPub_->publish(ptcMsg_);
 }
 
 void ToFCVNode::depthCallback(){
-    cv::Mat dFrame;
-    std::vector<float> frameData = std::vector<float>(width_*height_*3);    
+    // Init 2D Mats
+
+    std::vector<float> frameData = std::vector<float>(width_ * height_ * 3);
     while (rclcpp::ok() && cap_->isConnected())
     {
-        cap_->getData(frameData.data());
+        if(cap_->getData(frameData.data())){
+            cap_->disconnect();
+            break;
+        };
 
         // Cam Info
         auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());
@@ -180,6 +185,13 @@ void ToFCVNode::depthCallback(){
 
         // 3D Image
         pubDepthPtc(frameData.data());
+    }
+
+    if (!cap_->isConnected())
+    {
+        RCLCPP_ERROR(get_logger(), "Camera connection lost or unavailable");
+        rclcpp::sleep_for(std::chrono::seconds(3));
+        RCLCPP_INFO(get_logger(), "New camera connection attempt");
     }
 }
 }
