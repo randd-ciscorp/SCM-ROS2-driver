@@ -1,6 +1,6 @@
 # ToF1 ROS driver
 
-ROS 2 driver node for SCM1-ToF camera
+ROS 2 driver node for CIS SCM1-ToF camera
 
 ## Required system configurations
 
@@ -14,9 +14,9 @@ ROS 2 driver node for SCM1-ToF camera
 - Power supply (12V 5A)
 
 ## Topics
-`/camera/depth/cam_info` --> Camera info (CameraInfo)
-`/camera/depth/pcl_depth` --> 3D Depth Pointcloud (Pointcloud2)
-`/camera/depth/img_depth` --> 2D Depth map (Image)
+- `/camera/depth/cam_info` --> Camera info (CameraInfo)
+- `/camera/depth/pcl_depth` --> 3D Depth Pointcloud (Pointcloud2)
+- `/camera/depth/img_depth` --> 2D Depth map (Image)
 
 ## Quick Start
 
@@ -52,13 +52,20 @@ $ colcon build
 
 ### ROS driver node launching
 
-``` $ source install/setup.bash ``` 
+``` bash
+$ source install/setup.bash 
+``` 
 
 #### ToF + Display
-`$ ros2 launch tof1_driver tof_viz.launch`
+``` bash
+$ ros2 launch tof1_driver tof_viz.launch
+```
+
 
 #### ToF (no display)
-`$ ros2 launch tof1_driver tof.launch`
+``` bash
+$ ros2 launch tof1_driver tof.launch
+```
 
 ### Stop node
 
