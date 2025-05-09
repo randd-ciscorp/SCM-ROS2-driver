@@ -1,123 +1,97 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include "tof1_driver/Device.h"
+
 #include <fcntl.h>
 #include <unistd.h>
-#include <linux/videodev2.h>
 #include <sys/ioctl.h>
-#include <sys/fcntl.h>
 #include <sys/mman.h>
+#include <linux/videodev2.h>
+
 #include <errno.h>
-#include <string.h>
-
-#include "tof1_driver/Device.h"
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
+#include <string>
 
-int Device::xioctl(int fd, int req, void* arg){
-    int r;
-	do {
-		r = ioctl(fd, req, arg);
-	} while(r == -1 && errno == EINTR);
-	return r;
-}
-
-int Device::errno_exit(const char *s){
+int Device::errnoExit(const char *s) const{
     fprintf(stderr, "'%s': '%d, %s \n", s, errno, strerror(errno));
     exit(EXIT_FAILURE);
     return errno;
 }
 
-Device::Device(/* args */)
+int errnoPrint(const char *s){
+    fprintf(stderr, "'%s': '%d, %s \n", s, errno, strerror(errno));
+    return errno;
+}
+
+Device::Device()
 {
-    m_Param.thread_id = 0;
-    m_Param.fd = -1;
-    m_Param.data_len = 0;
-    m_Param.data = nullptr;
-    m_Param.buffers = nullptr;
-    m_Param.run = false;
-    m_Param.received = false;
-    m_Param.buffers = nullptr;
-    m_Param.bufInd = 0;
+    fd_ = -1;
+    data_ = nullptr;
+    buffers_ = nullptr;
+    buffers_ = nullptr;
+    bufInd_ = 0;
+    isStreamOn_ = false;
 }
 
 Device::~Device()
 {
-    Disconnect();
+    disconnect();
 }
 
-void Device::init_mmap(){
+void Device::initMmap(){
 
     // Request buffer
     struct v4l2_requestbuffers req;
-    req.count = N_IMAGES;
+    req.count = N_CAP_BUF;
     req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     req.memory = V4L2_MEMORY_MMAP;
-    if (xioctl(m_FD, VIDIOC_REQBUFS, &req))
+    if (xioctl(fd_, VIDIOC_REQBUFS, &req))
     {
-        errno_exit("Request buffers");
+        errnoExit("Request buffers");
     }
 
     // MMAP
-    m_Param.buffers = (struct RequestBuffer*)calloc(req.count, sizeof(RequestBuffer));
-    for (int bufInd = 0; bufInd < req.count; bufInd++)
+    buffers_ = (struct RequestBuffer*)calloc(req.count, sizeof(RequestBuffer));
+    for (int bufInd = 0; bufInd < N_CAP_BUF; bufInd++)
     {
         struct v4l2_buffer buf;
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_MMAP;
         buf.index = bufInd;
-        if (xioctl(m_FD, VIDIOC_QUERYBUF, &buf) < 0)
+        if (xioctl(fd_, VIDIOC_QUERYBUF, &buf) < 0)
         {
-            errno_exit("Buffer query");
+            errnoExit("Buffer query failed");
         }
 
-        m_Param.buffers[bufInd].length = buf.length;
-        m_Param.buffers[bufInd].data = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, m_FD ,buf.m.offset);
-        if (m_Param.buffers[bufInd].data == MAP_FAILED)
+        buffers_[bufInd].length = buf.length;
+        buffers_[bufInd].data = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd_ ,buf.m.offset);
+        if (buffers_[bufInd].data == MAP_FAILED)
         {
-            errno_exit("MMAP");
+            errnoExit("MMAP failed");
         }
 
-        m_Param.bufInd = buf.index;
+        bufInd = buf.index;
         
-        if (xioctl(m_FD, VIDIOC_QBUF, &buf) < 0)
+        if (xioctl(fd_, VIDIOC_QBUF, &buf) < 0)
         {
-            errno_exit("Test QBUF");
+            errnoExit("QBUF failed");
         }
     }
-    
-        
 }
 
-int Device::Connect(const char* serial_number, int height, int width)
+int Device::connect(int height, int width)
 {
-    CInstanceId instanceId;
-    instanceId.DeviceName = "/dev/video0";
-
-    if (serial_number = NULL)
-    {
-        return E_POINTER;
-    }
+    const char* deviceName = "/dev/video0";
 
     // Open
-    m_FD = open(instanceId.DeviceName.data(), O_RDWR | O_NONBLOCK);
-    if (m_FD < 0)
+    fd_ = open(deviceName, O_RDWR | O_NONBLOCK);
+    if (fd_ < 0)
     {
-        errno_exit("Opening");
+        fprintf(stderr, "Could not find camera. Is camera connected? \n");
+        return -1;
     }
     
-    // Capability
-    struct v4l2_capability cap;
-    if (xioctl(m_FD, VIDIOC_QUERYCAP, &cap) < 0)
-    {
-        errno_exit("Capability query");
-    }
-    printf("Driver: %s \n", cap.driver);
-    printf("Card: %s \n", cap.card);
-    printf("  Version: %u.%u.%u",
-        (cap.version >> 16) & 0xFF,
-        (cap.version >> 8)  & 0xFF,
-        (cap.version)       & 0xFF);
-    
-
     // Format
     struct v4l2_format fmt;
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -125,112 +99,116 @@ int Device::Connect(const char* serial_number, int height, int width)
     fmt.fmt.pix.height = height;
     fmt.fmt.pix.width = width;
     fmt.fmt.pix.field = V4L2_FIELD_ANY;
-    if (xioctl(m_FD, VIDIOC_S_FMT, &fmt) < 0)
+    if (xioctl(fd_, VIDIOC_S_FMT, &fmt) < 0)
     {
-        errno_exit("Format setting");
+        errnoExit("Format setting");
     }
 
-    init_mmap();
+    initMmap();
 
     // StreamON
     enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    if (xioctl(m_FD, VIDIOC_STREAMON, &type))
+    if (xioctl(fd_, VIDIOC_STREAMON, &type))
     {
-        errno_exit("StreamON");
+        errnoExit("StreamON");
     }
-    m_StreamOn = true;
+    isStreamOn_ = true;
     
     return S_OK;
 }
 
-void Device::Disconnect(){
-    if (m_StreamOn)
+void Device::disconnect(){
+    if (isStreamOn_)
     {
         enum v4l2_buf_type type;
         type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        xioctl(m_FD, VIDIOC_STREAMOFF, &type);
-        m_StreamOn = false;
+        xioctl(fd_, VIDIOC_STREAMOFF, &type);
+        isStreamOn_ = false;
     }
 
-    if (m_Param.buffers)
+    if (buffers_)
     {
-        for (int bufInd = 0; bufInd < N_IMAGES; bufInd++)
+        for (int bufInd = 0; bufInd < N_CAP_BUF; bufInd++)
         {
-            munmap(m_Param.buffers[bufInd].data, m_Param.buffers[bufInd].length);
+            munmap(buffers_[bufInd].data, buffers_[bufInd].length);
         }
-        free(m_Param.buffers);
-        m_Param.buffers = nullptr;
+        free(buffers_);
+        buffers_ = nullptr;
     }
 
-    close(m_FD);
+    close(fd_);
 }
 
-int Device::GetDeviceInfo(std::vector<CInstanceId>* pInstanceIdList){
-    return 1;
+DevInfo Device::getInfo() const
+{
+    DevInfo devInfo;
+
+    // Capability
+    struct v4l2_capability cap;
+    if (xioctl(fd_, VIDIOC_QUERYCAP, &cap) < 0)
+    {
+        errnoExit("Capability query");
+    }
+    printf("Driver: %s \n", cap.driver);
+    printf("Card: %s \n", cap.card);
+    printf("  Version: %u.%u.%u",
+        (cap.version >> 16) & 0xFF,
+        (cap.version >> 8)  & 0xFF,
+        (cap.version)       & 0xFF);
+
+    
+    struct v4l2_format fmt {};
+    fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    if (xioctl(fd_, VIDIOC_G_FMT, &fmt) < 0)
+    {
+        errnoExit("Get device format");
+        return DevInfo();
+    }    
+
+    devInfo.devName = std::string(reinterpret_cast<char*>(cap.card));
+    devInfo.driverVers = std::string(reinterpret_cast<char*>(cap.driver));
+    devInfo.sn = std::string(reinterpret_cast<char*>(cap.bus_info));
+    devInfo.width = fmt.fmt.pix.width;
+    devInfo.height = fmt.fmt.pix.height;
+
+    return devInfo;
 }
 
-void* Device::GetFrameData(){
+int Device::getData(float* data){
     fd_set fds;
     FD_ZERO(&fds);
-    FD_SET(m_FD, &fds);
+    FD_SET(fd_, &fds);
 
-    struct timeval tv{};
-    tv.tv_sec = 2;
-    if (select(m_FD + 1, &fds, NULL, NULL, NULL) <= 0)
+    if (select(fd_ + 1, &fds, NULL, NULL, NULL) <= 0)
     {
-        errno_exit("Frame capture timeout");
+        //errnoExit("Frame capture timeout");
+        return errnoPrint("Frame capture timeout");
     }
 
-    if(FD_ISSET(m_FD, &fds)){
-
+    if(FD_ISSET(fd_, &fds)){
         struct v4l2_buffer in_buf{};
         in_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         in_buf.memory = V4L2_MEMORY_MMAP;
 
-        if (xioctl(m_FD, VIDIOC_DQBUF, &in_buf) < 0)
+        if (xioctl(fd_, VIDIOC_DQBUF, &in_buf) < 0)
         {
-            errno_exit("DQbuf");
-        }
-
-        if (xioctl(m_FD, VIDIOC_QBUF, &in_buf) < 0)
-        {
-            errno_exit("QBuf");
-        }
-
-        return m_Param.buffers[in_buf.index].data;
-    }
-}
-
-int Device::GetData(float* data){
-    fd_set fds;
-    FD_ZERO(&fds);
-    FD_SET(m_FD, &fds);
-
-    struct timeval tv{};
-    tv.tv_sec = 2;
-    if (select(m_FD + 1, &fds, NULL, NULL, NULL) <= 0)
-    {
-        errno_exit("Frame capture timeout");
-    }
-
-    if(FD_ISSET(m_FD, &fds)){
-
-        struct v4l2_buffer in_buf{};
-        in_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        in_buf.memory = V4L2_MEMORY_MMAP;
-
-        if (xioctl(m_FD, VIDIOC_DQBUF, &in_buf) < 0)
-        {
-            errno_exit("DQbuf");
+            return errnoPrint("DQBuf failed");
         }
         
-        memcpy((void*)data, m_Param.buffers[in_buf.index].data, m_Param.buffers[in_buf.index].length);
+        memcpy((void*)data, buffers_[in_buf.index].data, buffers_[in_buf.index].length);
 
-        if (xioctl(m_FD, VIDIOC_QBUF, &in_buf) < 0)
+        if (xioctl(fd_, VIDIOC_QBUF, &in_buf) < 0)
         {
-            errno_exit("QBuf");
+            return errnoPrint("QBuf failed");
         }
 
-        return 1;
+        return 0;
     }
+
+    return -1;
+}
+
+bool Device::isConnected() const
+{
+    return isStreamOn_;
 }
