@@ -1,9 +1,11 @@
-#include <pthread.h>
-#include <semaphore.h>
-#include <string>
-#include <vector>
+#include <sys/ioctl.h>
 
-#define N_IMAGES	3
+#include <cerrno>
+#include <cstddef>
+#include <cstdint>
+#include <string>
+
+#define N_CAP_BUF	4
 
 // Error type
 #define S_OK			0
@@ -13,8 +15,13 @@
 #define E_OUTOFMEMORY	ENOMEM
 #define E_HANDLE		ENODATA
 
-typedef long	LONG;
-typedef unsigned char	BYTE;
+inline int xioctl(int fd, uint req, void* arg){
+    int r;
+	do {
+		r = ioctl(fd, req, arg);
+	} while(r == -1 && errno == EINTR);
+	return r;
+}
 
 struct RequestBuffer
 {
@@ -22,61 +29,41 @@ struct RequestBuffer
     size_t length;
 };
 
-// スレッドに渡すパラメータ構造体
-struct ThreadParam
+struct DevInfo
 {
-	pthread_t	thread_id;
-	bool	run;
-	bool	received;
-	int		fd;
-	int		data_len;
-	sem_t	*fd_sem;		// Semaphore
-	sem_t	*recv_sem;		// Semaphore
-	BYTE	*data;
-    unsigned int bufInd;
-	struct RequestBuffer* buffers;
-};
+    std::string devName;
+    std::string driverVers;
+    std::string sn;
 
-class CInstanceId
-{
-public:
-	std::string VendorID;
-	std::string ProductID;
-	std::string SerialNo;
-	std::string DeviceName;
-	std::string Manufacturer;
-	std::string Product;
+    int width;
+    int height;
 };
 
 class Device
 { 
 public:
-    Device(/* args */);
+    Device();
     ~Device();
 
-    int Connect(const char* serialNum, int height, int width);
-    void Disconnect();
+    int connect(int height, int width);
+    void disconnect();
 
-    // 取得／設定
-	int GetDeviceCount();
-	int GetDeviceInfo(std::vector<CInstanceId>* pInstanceIdList);
-	int GetData(float* data);
-    void* GetFrameData();
-	bool m_StreamOn = false;
+    DevInfo getInfo() const;
+	int getData(float* data);
+    bool isConnected() const;
 
 private:
-	int m_FD = -1;
+    DevInfo devInfo_;
 
-	// thread
-	struct ThreadParam m_Param;
+    int	fd_ = -1;
+
+	u_int8_t *data_;
+    unsigned int bufInd_;
+	struct RequestBuffer* buffers_;
+
+    bool isStreamOn_ = false;
 	
-    void init_mmap();
+    void initMmap();
 
-	//int CreateInstanceIdList();
-	int errno_exit(const char *s);
-	//static int xioctl(int fd, int request, void *arg, sem_t *fd_sem);
-	static int xioctl(int fd, int request, void *arg);
-
+	int errnoExit(const char *s) const;
 };
-
-
