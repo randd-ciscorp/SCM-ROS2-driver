@@ -1,0 +1,8 @@
+<launch>
+    <include file="$(find-pkg-share tof1_driver)/launch/tof_launch.launch"/>
+
+    <node pkg="rviz2" exec="rviz2" name="rviz_node"/>
+
+    <node pkg="tf2_ros" exec="static_transform_publisher" name="map_to_camera_base" args="0 0 1.0 0 0 0  map camera_base" />
+
+</launch>
