@@ -64,7 +64,7 @@ $ ros2 launch tof1_driver tof_viz.launch
 
 #### ToF (no display)
 ``` bash
-$ ros2 launch tof1_driver tof.launch
+$ ros2 launch tof1_driver tof_launch.launch
 ```
 
 ### Stop node
