@@ -9,7 +9,9 @@ int main(int argc, char* argv[]){
     options.use_intra_process_comms(true);
 
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<tof_driver::ToFCVNode>(options));
+    std::shared_ptr<tof_driver::ToFCVNode> tof_node = std::make_shared<tof_driver::ToFCVNode>(options);
+    tof_node->start();
+    rclcpp::spin(tof_node);
     rclcpp::shutdown();
     return 0;
 }
