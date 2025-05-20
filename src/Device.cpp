@@ -174,7 +174,7 @@ DevInfo Device::getInfo() const
     return devInfo;
 }
 
-int Device::getData(float* data){
+int Device::getData(uint8_t* data){
     fd_set fds;
     FD_ZERO(&fds);
     FD_SET(fd_, &fds);
@@ -194,7 +194,6 @@ int Device::getData(float* data){
         {
             return errnoPrint("DQBuf failed");
         }
-        
         memcpy((void*)data, buffers_[in_buf.index].data, buffers_[in_buf.index].length);
 
         if (xioctl(fd_, VIDIOC_QBUF, &in_buf) < 0)
