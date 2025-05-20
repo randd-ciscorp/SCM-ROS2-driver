@@ -1,6 +1,6 @@
 # SCM ROS 2 driver
 
-ROS 2 driver node for CIS SCM camera series
+ROS 2 driver node for CIS SCM camera series.
 
 ## Required system configurations
 
@@ -14,11 +14,21 @@ ROS 2 driver node for CIS SCM camera series
 - Power supply (12V 5A)
 
 ## Topics
+
+### SCM-ToF1
 - `/camera/depth/cam_info` --> Camera info (CameraInfo)
 - `/camera/depth/pcl_depth` --> 3D Depth Pointcloud (Pointcloud2)
 - `/camera/depth/img_depth` --> 2D Depth map (Image)
 
+### SCM-RGBD1
+- `/camera/depth/cam_info` --> Camera info (CameraInfo)
+- `/camera/depth/cam_rgb_info` --> Camera RGB info (CameraInfo)
+- `/camera/depth/pcl_depth` --> 3D Depth Pointcloud (Pointcloud2)
+- `/camera/depth/img_depth` --> 2D Depth map (Image)
+- `/camera/depth/img_rgb` --> 2D RGB image (Image)
+
 ## Quick Start
+
 
 ### ROS 2 installation
 If it is not already installed, please install the right ROS 2 dristribution
@@ -48,7 +58,7 @@ $ colcon build
 ### Camera setup
 1. Connect the USB3.0 cable from host PC/Robot to the camera
 2. Connect the external power source to the camera
-- **NOTE**: The camera will takes few seconds to boot
+- **NOTE**: The camera will take a few seconds to boot
 
 ### ROS driver node launching
 
@@ -56,15 +66,28 @@ $ colcon build
 $ source install/setup.bash 
 ``` 
 
-#### ToF + Display
+#### SCM-ToF1
+##### ToF + Display
 ``` bash
-$ ros2 launch tof1_driver tof_viz.launch
+$ ros2 launch cis_scm tof_viz.launch
 ```
 
-
-#### ToF (no display)
+##### ToF (no display)
 ``` bash
-$ ros2 launch tof1_driver tof_launch.launch
+$ ros2 launch cis_scm tof_launch.launch
+```
+
+***
+
+#### SCM-RGBD1
+##### RGBD + Display
+``` bash
+$ ros2 launch cis_scm rgbd_viz_launch.py
+```
+
+##### RGBD (no display)
+``` bash
+$ ros2 launch cis_scm rgbd_launch.py
 ```
 
 ### Stop node
