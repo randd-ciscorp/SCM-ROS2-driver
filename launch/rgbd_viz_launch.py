@@ -8,7 +8,7 @@ def generate_launch_description():
     return LaunchDescription([
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                get_package_share_directory('tof1_driver') + '/launch' + '/rgbd_launch.py'
+                get_package_share_directory('cis_scm') + '/launch' + '/rgbd_launch.py'
             )
         ),
 

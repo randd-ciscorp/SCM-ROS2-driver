@@ -19,7 +19,7 @@ namespace cis_scm
 RGBDNode::RGBDNode(const rclcpp::NodeOptions &node_options) : ToFCVNode(node_options){
     rgbImgPub_ = create_publisher<sensor_msgs::msg::Image>(topicPrefix_ + "/img_rgb", 10);
     infoRGBPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicPrefix_ + "/cam_rgb_info", 10);
-    cinfo_rgb_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-rgbd1");
+    cinfo_rgb_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm");
 
     importRGBDParameters();
     

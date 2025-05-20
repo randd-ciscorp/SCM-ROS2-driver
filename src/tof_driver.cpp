@@ -19,7 +19,7 @@ ToFCVNode::ToFCVNode(const rclcpp::NodeOptions & node_options) : Node("tof_drive
     depthPCLPub_ = create_publisher<sensor_msgs::msg::PointCloud2>(topicPrefix_ + "/pcl_depth", 10);
     infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicPrefix_ + "/cam_info", 10);
 
-    cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm1-tof");
+    cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm");
     importParams();
 
     cap_ = std::make_unique<Device>();
