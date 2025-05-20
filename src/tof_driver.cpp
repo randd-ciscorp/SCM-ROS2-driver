@@ -43,7 +43,7 @@ void ToFCVNode::dispInfo(DevInfo devInfo) const{
 
 void ToFCVNode::importParams(){
     if(!this->has_parameter("camera_params")){
-        this->declare_parameter("camera_params", "package://tof1_driver/cam_param.yaml");
+        this->declare_parameter("camera_params", "package://cis_scm/cam_param.yaml");
     }
     std::string param_file_path = this->get_parameter("camera_params").as_string();
 
@@ -65,8 +65,6 @@ void ToFCVNode::importParams(){
 void ToFCVNode::start(){
     if (cap_->isConnected())
     {
-        RCLCPP_INFO(get_logger(), "Camera connected");
-
         DevInfo devInfo = cap_->getInfo();
         dispInfo(devInfo);
         width_ = devInfo.width;

@@ -149,13 +149,6 @@ DevInfo Device::getInfo() const
     {
         errnoExit("Capability query");
     }
-    printf("Driver: %s \n", cap.driver);
-    printf("Card: %s \n", cap.card);
-    printf("  Version: %u.%u.%u",
-        (cap.version >> 16) & 0xFF,
-        (cap.version >> 8)  & 0xFF,
-        (cap.version)       & 0xFF);
-
     
     struct v4l2_format fmt {};
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;

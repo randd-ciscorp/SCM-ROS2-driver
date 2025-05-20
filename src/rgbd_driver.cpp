@@ -22,16 +22,6 @@ RGBDNode::RGBDNode(const rclcpp::NodeOptions &node_options) : ToFCVNode(node_opt
     cinfo_rgb_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm");
 
     importRGBDParameters();
-    
-    cap_ = std::make_unique<Device>();
-    if (!cap_->connect(480, 640))
-    {
-        RCLCPP_INFO(get_logger(), "Camera connected");
-    }
-    else
-    {
-        RCLCPP_ERROR(get_logger(), "Camera connection failed");
-    }
 }
 
 void RGBDNode::importRGBDParameters()
