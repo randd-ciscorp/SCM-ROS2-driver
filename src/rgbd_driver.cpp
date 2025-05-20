@@ -21,8 +21,8 @@ RGBDNode::RGBDNode(const rclcpp::NodeOptions &node_options) : ToFCVNode(node_opt
     infoRGBPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicPrefix_ + "/cam_rgb_info", 10);
     cinfo_rgb_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-rgbd1");
 
-    importParams();
-
+    importRGBDParameters();
+    
     cap_ = std::make_unique<Device>();
     if (!cap_->connect(480, 640))
     {
@@ -32,6 +32,17 @@ RGBDNode::RGBDNode(const rclcpp::NodeOptions &node_options) : ToFCVNode(node_opt
     {
         RCLCPP_ERROR(get_logger(), "Camera connection failed");
     }
+}
+
+void RGBDNode::importRGBDParameters()
+{
+    // Check if pointcloud color is not needed
+    if (!this->has_parameter("pointcloud_rgb"))
+    {
+        this->declare_parameter("pointcloud_rgb", true);
+    }
+    RCLCPP_INFO(get_logger(), "Getting parameter");
+    isPCLNoColor_ = !this->get_parameter("pointcloud_rgb").as_bool();
 }
 
 void RGBDNode::start()
@@ -48,7 +59,14 @@ void RGBDNode::start()
         ptcMsg_.height = height_;
         ptcMsg_.is_bigendian = true;     
         sensor_msgs::PointCloud2Modifier ptcModif(ptcMsg_);
-        ptcModif.setPointCloud2FieldsByString(2, "xyz", "rgb");
+        if (isPCLNoColor_)
+        {
+            ptcModif.setPointCloud2FieldsByString(1, "xyz");
+        }
+        else
+        {
+            ptcModif.setPointCloud2FieldsByString(2, "xyz", "rgb");
+        }
         ptcModif.resize(ptcMsg_.width * ptcMsg_.height);
 
         // Start capturing
@@ -170,7 +188,14 @@ void RGBDNode::RGBDCallback()
 
         pubDepthImage(xyzrgbData.xyz.z.data());
         pubRGBImage(reinterpret_cast<uint8_t*>(xyzrgbData.rgb.data()));
-        pubRGBDPtc(xyzrgbData);
+        if (isPCLNoColor_)
+        {
+            pubDepthPtc(xyzrgbData.xyz);
+        }
+        else
+        {
+            pubRGBDPtc(xyzrgbData);
+        }
     }
 }
 }

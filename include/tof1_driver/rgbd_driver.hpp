@@ -54,6 +54,8 @@ protected:
 
     std::string rgbCameraFrame_ = "rgb_camera_link";
 
+    void importRGBDParameters();
+
     XYZRGBData splitXYZRGBData(uint8_t *xyzrgbData);
 
     void pubRGBImage(uint8_t *data);
