@@ -1,4 +1,4 @@
-#include "tof1_driver/Device.h"
+#include "cis_scm/Device.h"
 
 #include <fcntl.h>
 #include <unistd.h>

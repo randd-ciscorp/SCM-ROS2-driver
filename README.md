@@ -1,6 +1,6 @@
-# ToF1 ROS driver
+# SCM ROS 2 driver
 
-ROS 2 driver node for CIS SCM1-ToF camera
+ROS 2 driver node for CIS SCM camera series
 
 ## Required system configurations
 
@@ -9,7 +9,7 @@ ROS 2 driver node for CIS SCM1-ToF camera
         - Ubuntu 22.04 / ROS 2 Humble
     - USB3.0 port
 
-- SCM-ToF1
+- SCM camera
 - USB3.0 / micro USB type-B cable
 - Power supply (12V 5A)
 

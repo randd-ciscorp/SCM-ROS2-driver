@@ -1,6 +1,6 @@
 #include <rclcpp/rclcpp.hpp>
 
-#include <tof1_driver/rgbd_driver.hpp>
+#include <cis_scm/rgbd_driver.hpp>
 
 int main(int argc, char* argv[])
 {
@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
     options.use_intra_process_comms(true);
 
     rclcpp::init(argc, argv);
-    std::shared_ptr<tof_driver::RGBDNode> rgbd_node = std::make_shared<tof_driver::RGBDNode>(options);
+    std::shared_ptr<cis_scm::RGBDNode> rgbd_node = std::make_shared<cis_scm::RGBDNode>(options);
     rgbd_node->start();
     rclcpp::spin(rgbd_node);
     rclcpp::shutdown();

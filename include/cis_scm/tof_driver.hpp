@@ -13,11 +13,11 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "tof1_driver/Device.h"
+#include "cis_scm/Device.h"
 
 #define MAX_DEPTH 7.5
 
-namespace tof_driver
+namespace cis_scm
 {
 
 struct XYZData

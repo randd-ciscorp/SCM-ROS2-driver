@@ -13,10 +13,10 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "tof1_driver/Device.h"
-#include "tof1_driver/tof_driver.hpp"
+#include "cis_scm/Device.h"
+#include "cis_scm/tof_driver.hpp"
 
-namespace tof_driver
+namespace cis_scm
 {
 
 struct XYZRGBData
