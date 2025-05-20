@@ -4,11 +4,11 @@ from launch_ros.actions import Node
 def generate_launch_description():
     return LaunchDescription([
         Node(
-            package="tof1_driver",
-            namespace="tof1_driver",
+            package="cis_scm",
+            namespace="cis_scm",
             executable="rgbd_node",
             name="rgbd_node",
-            parameters=[{"camera_params": "package://tof1_driver/cam_param.yaml"}]
+            parameters=[{"camera_params": "package://cis_scm/cam_param.yaml"}]
         ),
         Node(
             package="tf2_ros",

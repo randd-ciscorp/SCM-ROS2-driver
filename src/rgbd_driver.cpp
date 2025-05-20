@@ -1,4 +1,4 @@
-#include "tof1_driver/rgbd_driver.hpp"
+#include "cis_scm/rgbd_driver.hpp"
 
 #include <string>
 #include <chrono>
@@ -9,17 +9,17 @@
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "tof1_driver/tof_driver.hpp"
+#include "cis_scm/tof_driver.hpp"
 
 using namespace std::chrono_literals;
 
-namespace tof_driver
+namespace cis_scm
 {
 // TODO: Change the node name
 RGBDNode::RGBDNode(const rclcpp::NodeOptions &node_options) : ToFCVNode(node_options){
     rgbImgPub_ = create_publisher<sensor_msgs::msg::Image>(topicPrefix_ + "/img_rgb", 10);
     infoRGBPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicPrefix_ + "/cam_rgb_info", 10);
-    cinfo_rgb_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-rgbd1");
+    cinfo_rgb_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm");
 
     importRGBDParameters();
     
