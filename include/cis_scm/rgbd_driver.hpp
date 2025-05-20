@@ -38,7 +38,7 @@ struct XYZRGBPixel
 class RGBDNode : public ToFCVNode
 {
 public:
-    RGBDNode(const rclcpp::NodeOptions & node_options);
+    RGBDNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
 
     void start();
 

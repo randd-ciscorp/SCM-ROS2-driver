@@ -15,8 +15,7 @@ using namespace std::chrono_literals;
 
 namespace cis_scm
 {
-// TODO: Change the node name
-RGBDNode::RGBDNode(const rclcpp::NodeOptions &node_options) : ToFCVNode(node_options){
+RGBDNode::RGBDNode(const std::string node_name, const rclcpp::NodeOptions &node_options) : ToFCVNode(node_name, node_options){
     rgbImgPub_ = create_publisher<sensor_msgs::msg::Image>(topicPrefix_ + "/img_rgb", 10);
     infoRGBPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicPrefix_ + "/cam_rgb_info", 10);
     cinfo_rgb_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm");

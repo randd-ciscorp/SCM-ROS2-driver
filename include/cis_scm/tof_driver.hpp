@@ -30,7 +30,7 @@ struct XYZData
 class ToFCVNode : public rclcpp::Node
 {
 public:
-    ToFCVNode(const rclcpp::NodeOptions & node_options);
+    ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
 
     void start();
 
