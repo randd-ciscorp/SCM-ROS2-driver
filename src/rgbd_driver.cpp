@@ -1,4 +1,4 @@
-#include "tof1_driver/rgbd_driver.hpp"
+#include "cis_scm/rgbd_driver.hpp"
 
 #include <string>
 #include <chrono>
@@ -9,11 +9,11 @@
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "tof1_driver/tof_driver.hpp"
+#include "cis_scm/tof_driver.hpp"
 
 using namespace std::chrono_literals;
 
-namespace tof_driver
+namespace cis_scm
 {
 // TODO: Change the node name
 RGBDNode::RGBDNode(const rclcpp::NodeOptions &node_options) : ToFCVNode(node_options){

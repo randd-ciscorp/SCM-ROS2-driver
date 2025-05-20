@@ -1,4 +1,4 @@
-#include "tof1_driver/tof_driver.hpp"
+#include "cis_scm/tof_driver.hpp"
 
 #include <string>
 #include <chrono>
@@ -11,7 +11,7 @@
 
 using namespace std::chrono_literals;
 
-namespace tof_driver
+namespace cis_scm
 {
 
 ToFCVNode::ToFCVNode(const rclcpp::NodeOptions & node_options) : Node("tof_driver", node_options){
