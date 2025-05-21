@@ -1,4 +1,4 @@
-#include "tof1_driver/Device.h"
+#include "cis_scm/Device.h"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -149,13 +149,6 @@ DevInfo Device::getInfo() const
     {
         errnoExit("Capability query");
     }
-    printf("Driver: %s \n", cap.driver);
-    printf("Card: %s \n", cap.card);
-    printf("  Version: %u.%u.%u",
-        (cap.version >> 16) & 0xFF,
-        (cap.version >> 8)  & 0xFF,
-        (cap.version)       & 0xFF);
-
     
     struct v4l2_format fmt {};
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -174,7 +167,7 @@ DevInfo Device::getInfo() const
     return devInfo;
 }
 
-int Device::getData(float* data){
+int Device::getData(uint8_t* data){
     fd_set fds;
     FD_ZERO(&fds);
     FD_SET(fd_, &fds);
@@ -194,7 +187,6 @@ int Device::getData(float* data){
         {
             return errnoPrint("DQBuf failed");
         }
-        
         memcpy((void*)data, buffers_[in_buf.index].data, buffers_[in_buf.index].length);
 
         if (xioctl(fd_, VIDIOC_QBUF, &in_buf) < 0)

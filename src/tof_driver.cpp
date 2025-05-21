@@ -1,4 +1,4 @@
-#include "tof1_driver/tof_driver.hpp"
+#include "cis_scm/tof_driver.hpp"
 
 #include <string>
 #include <chrono>
@@ -11,44 +11,25 @@
 
 using namespace std::chrono_literals;
 
-namespace tof_driver
+namespace cis_scm
 {
 
-ToFCVNode::ToFCVNode(const rclcpp::NodeOptions & node_options) : Node("tof_driver", node_options){
-    imgPub_ = create_publisher<sensor_msgs::msg::Image>(topicPrefix_ + "/img_depth", 10);
-    pclPub_ = create_publisher<sensor_msgs::msg::PointCloud2>(topicPrefix_ + "/pcl_depth", 10);
+ToFCVNode::ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & node_options) : Node(node_name, node_options){
+    depthImgPub_ = create_publisher<sensor_msgs::msg::Image>(topicPrefix_ + "/img_depth", 10);
+    depthPCLPub_ = create_publisher<sensor_msgs::msg::PointCloud2>(topicPrefix_ + "/pcl_depth", 10);
     infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicPrefix_ + "/cam_info", 10);
 
-    cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm1-tof");
+    cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm");
     importParams();
 
     cap_ = std::make_unique<Device>();
-    cap_->connect(480, 640);
-
-    if (cap_->isConnected())
+    if (!cap_->connect(480, 640))
     {
         RCLCPP_INFO(get_logger(), "Camera connected");
-
-        DevInfo devInfo = cap_->getInfo();
-        dispInfo(devInfo);
-        width_ = devInfo.width;
-        height_ = devInfo.height;
-
-        // Formating pointcloud message
-        ptcMsg_.width = width_;
-        ptcMsg_.height = height_;
-        ptcMsg_.is_bigendian = true;     
-        sensor_msgs::PointCloud2Modifier ptcModif(ptcMsg_);
-        ptcModif.setPointCloud2FieldsByString(1, "xyz");
-        ptcModif.resize(ptcMsg_.width * ptcMsg_.height);
-
-        // Start capturing
-        this->start();
     }
     else
     {
         RCLCPP_ERROR(get_logger(), "Camera connection failed");
-        rclcpp::shutdown();
     }
 }
 
@@ -62,7 +43,7 @@ void ToFCVNode::dispInfo(DevInfo devInfo) const{
 
 void ToFCVNode::importParams(){
     if(!this->has_parameter("camera_params")){
-        this->declare_parameter("camera_params", "package://tof1_driver/cam_param.yaml");
+        this->declare_parameter("camera_params", "package://cis_scm/cam_param.yaml");
     }
     std::string param_file_path = this->get_parameter("camera_params").as_string();
 
@@ -82,8 +63,29 @@ void ToFCVNode::importParams(){
 }
 
 void ToFCVNode::start(){
-    RCLCPP_INFO(get_logger(), "Start capturing");
-    timer_ = this->create_wall_timer(30ms, std::bind(&ToFCVNode::depthCallback, this));
+    if (cap_->isConnected())
+    {
+        DevInfo devInfo = cap_->getInfo();
+        dispInfo(devInfo);
+        width_ = devInfo.width;
+        height_ = devInfo.height;
+
+        // Formating pointcloud message
+        ptcMsg_.width = width_;
+        ptcMsg_.height = height_;
+        ptcMsg_.is_bigendian = true;     
+        sensor_msgs::PointCloud2Modifier ptcModif(ptcMsg_);
+        ptcModif.setPointCloud2FieldsByString(1, "xyz");
+        ptcModif.resize(ptcMsg_.width * ptcMsg_.height);
+
+        RCLCPP_INFO(get_logger(), "Start capturing");
+        timer_ = this->create_wall_timer(30ms, std::bind(&ToFCVNode::depthCallback, this));
+    }
+    else
+    {
+        RCLCPP_ERROR(get_logger(), "Camera connection failed");
+        rclcpp::shutdown();
+    }
 }
 
 XYZData ToFCVNode::splitXYZ(float* data){
@@ -102,9 +104,7 @@ XYZData ToFCVNode::splitXYZ(float* data){
 }
 
 void ToFCVNode::pubDepthImage(float* data){
-    xyzData_ = splitXYZ(data);
-    
-    greyDepth_ = cv::Mat(height_, width_, CV_32FC1, xyzData_.z.data());
+    greyDepth_ = cv::Mat(height_, width_, CV_32FC1, data);
     greyDepth_.convertTo(greyDepth_, CV_8UC1, 255./ MAX_DEPTH);
     
     // Grey -> Hue
@@ -128,10 +128,10 @@ void ToFCVNode::pubDepthImage(float* data){
     imgMsg_.step = width_ * sizeof(uchar)*3;
     imgMsg_.is_bigendian = true;
     imgMsg_.data.assign(hueDepth_.data, hueDepth_.data + hueDepth_.rows*hueDepth_.cols*3);
-    imgPub_->publish(std::move(imgMsg_));
+    depthImgPub_->publish(std::move(imgMsg_));
 }
 
-void ToFCVNode::pubDepthPtc(float * data){
+void ToFCVNode::pubDepthPtc(XYZData &data){
         // Header
         auto header = std_msgs::msg::Header();
         rclcpp::Time time;
@@ -146,7 +146,7 @@ void ToFCVNode::pubDepthPtc(float * data){
         //fill data
         for (size_t i = 0; i < ptcMsg_.height * ptcMsg_.width; i++, ++iter_x, ++iter_y, ++iter_z)
         {
-            float z = data[i * 3 + 2];
+            float z = data.z[i];
             if (z <= 0)
             {
                 *iter_x = std::numeric_limits<float>::quiet_NaN();
@@ -154,13 +154,13 @@ void ToFCVNode::pubDepthPtc(float * data){
                 *iter_z = std::numeric_limits<float>::quiet_NaN();                
             }
             else{
-                *iter_x = data[i * 3];
-                *iter_y = data[i * 3 + 1];
+                *iter_x = data.x[i];
+                *iter_y = data.y[i];
                 *iter_z = z;
             }
         }
 
-        pclPub_->publish(ptcMsg_);
+        depthPCLPub_->publish(ptcMsg_);
 }
 
 void ToFCVNode::depthCallback(){
@@ -169,10 +169,10 @@ void ToFCVNode::depthCallback(){
     std::vector<float> frameData = std::vector<float>(width_ * height_ * 3);
     while (rclcpp::ok() && cap_->isConnected())
     {
-        if(cap_->getData(frameData.data())){
+        if(cap_->getData(reinterpret_cast<uint8_t*>(frameData.data()))){
             cap_->disconnect();
             break;
-        };
+        }
 
         // Cam Info
         auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());
@@ -181,10 +181,11 @@ void ToFCVNode::depthCallback(){
         infoPub_->publish(*infoMsg);
         
         // 2D Image
-        pubDepthImage(frameData.data());
+        xyzData_ = splitXYZ(frameData.data());
+        pubDepthImage(xyzData_.z.data());
 
         // 3D Image
-        pubDepthPtc(frameData.data());
+        pubDepthPtc(xyzData_);
     }
 
     if (!cap_->isConnected())

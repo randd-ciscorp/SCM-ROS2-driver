@@ -1,3 +1,6 @@
+#ifndef DEVICE_HPP
+#define DEVICE_HPP
+
 #include <sys/ioctl.h>
 
 #include <cerrno>
@@ -49,7 +52,7 @@ public:
     void disconnect();
 
     DevInfo getInfo() const;
-	int getData(float* data);
+	int getData(uint8_t* data);
     bool isConnected() const;
 
 private:
@@ -67,3 +70,5 @@ private:
 
 	int errnoExit(const char *s) const;
 };
+
+#endif

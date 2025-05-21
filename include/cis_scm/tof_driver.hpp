@@ -1,3 +1,6 @@
+#ifndef TOF_DRIVER_HPP
+#define TOF_DRIVER_HPP
+
 #include <vector>
 #include <memory>
 #include <string>
@@ -10,11 +13,11 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "tof1_driver/Device.h"
+#include "cis_scm/Device.h"
 
 #define MAX_DEPTH 7.5
 
-namespace tof_driver
+namespace cis_scm
 {
 
 struct XYZData
@@ -27,11 +30,11 @@ struct XYZData
 class ToFCVNode : public rclcpp::Node
 {
 public:
-    ToFCVNode(const rclcpp::NodeOptions & node_options);
+    ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
 
     void start();
 
-private:
+protected:
     int width_;
     int height_;
 
@@ -47,10 +50,13 @@ private:
     
     std::unique_ptr<Device> cap_;
 
-    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> imgPub_;
-    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> pclPub_;
+    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> depthImgPub_;
+    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> depthPCLPub_;
+
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoPub_;
+    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoDepthPub_;
     std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
+    std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_depth_;
 
     std::string topicPrefix_ = "camera/depth";
     std::string cameraBaseFrame_ = "camera_base";
@@ -63,9 +69,10 @@ private:
     void dispInfo(DevInfo devInfo) const;
 
     void pubDepthImage(float * data);
-    void pubDepthPtc(float * data);
+    void pubDepthPtc(XYZData & data);
 
     void depthCallback();
     void infoCallback();
 };
 }
+#endif
