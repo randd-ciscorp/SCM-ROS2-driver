@@ -69,12 +69,12 @@ $ source install/setup.bash
 #### SCM-ToF1
 ##### ToF + Display
 ``` bash
-$ ros2 launch cis_scm tof_viz.launch
+$ ros2 launch cis_scm tof_viz_launch.py
 ```
 
 ##### ToF (no display)
 ``` bash
-$ ros2 launch cis_scm tof_launch.launch
+$ ros2 launch cis_scm tof_launch.py
 ```
 
 ***
