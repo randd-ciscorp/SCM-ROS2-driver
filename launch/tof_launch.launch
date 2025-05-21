@@ -1,8 +1,0 @@
-<launch>
-    <node pkg="cis_scm" exec="tof_node" name="tof_node" namespace="cis_scm">
-        <param name="camera_params" value="package://cis_scm/cam_param.yaml"/>
-    </node>
-
-    <node pkg="tf2_ros" exec="static_transform_publisher" name="camera_base_to_camera" args="0 0 0.03 0 0 0 camera_base camera" />
-    <node pkg="tf2_ros" exec="static_transform_publisher" name="camera_to_cam_depth" args="0.001 0 0 -1.57 0 -1.57 camera cam_depth" />
-</launch>
