@@ -13,7 +13,11 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "cis_scm/Device.h"
+#ifndef INTERNAL_DRIVER
+    #include "cis_scm/Device.h"
+#else
+    #include "cis_scm/InternalDevice.hpp"
+#endif
 #include "cis_scm/tof_driver.hpp"
 
 namespace cis_scm

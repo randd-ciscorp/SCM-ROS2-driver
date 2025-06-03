@@ -13,6 +13,8 @@
 #include <iostream>
 #include <string>
 
+namespace cis_scm {
+
 int Device::errnoExit(const char *s) const{
     fprintf(stderr, "'%s': '%d, %s \n", s, errno, strerror(errno));
     exit(EXIT_FAILURE);
@@ -203,4 +205,5 @@ int Device::getData(uint8_t* data){
 bool Device::isConnected() const
 {
     return isStreamOn_;
+}
 }

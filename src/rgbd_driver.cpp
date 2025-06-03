@@ -9,7 +9,11 @@
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "cis_scm/tof_driver.hpp"
+#ifndef INTERNAL_DRIVER
+#include "cis_scm/Device.h"
+#else
+#include "cis_scm/InternalDevice.hpp"
+#endif
 
 using namespace std::chrono_literals;
 

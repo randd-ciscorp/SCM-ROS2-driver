@@ -9,6 +9,12 @@
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <opencv2/opencv.hpp>
 
+#ifndef INTERNAL_DRIVER
+#include "cis_scm/Device.h"
+#else
+#include "cis_scm/InternalDevice.hpp"
+#endif
+
 using namespace std::chrono_literals;
 
 namespace cis_scm
@@ -22,8 +28,15 @@ ToFCVNode::ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & no
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm");
     importParams();
 
+#ifndef INTERNAL_DRIVER
+    RCLCPP_INFO(get_logger(),"EXTERNAL DRIVERRRR");
     cap_ = std::make_unique<Device>();
     if (!cap_->connect(480, 640))
+#else
+    RCLCPP_INFO(get_logger(),"INTERNAL DRIVERRRR");
+    cap_ = std::make_unique<InternalDevice>();
+    if (!cap_->connect(this->get_parameter("tof_params_path").as_string()))
+#endif
     {
         RCLCPP_INFO(get_logger(), "Camera connected");
     }
@@ -42,6 +55,7 @@ void ToFCVNode::dispInfo(DevInfo devInfo) const{
 }
 
 void ToFCVNode::importParams(){
+    // Cam params
     if(!this->has_parameter("camera_params")){
         this->declare_parameter("camera_params", "package://cis_scm/cam_param.yaml");
     }
@@ -60,6 +74,13 @@ void ToFCVNode::importParams(){
             rclcpp::shutdown();
         }
     }
+
+    // ToF params
+    if (!this->has_parameter("tof_params_path"))
+    {
+        // Default path in SCM-ToF1, probably need to change
+        this->declare_parameter("tof_params_path", "/home/root/tof_params");
+    }
 }
 
 void ToFCVNode::start(){
@@ -73,7 +94,7 @@ void ToFCVNode::start(){
         // Formating pointcloud message
         ptcMsg_.width = width_;
         ptcMsg_.height = height_;
-        ptcMsg_.is_bigendian = true;     
+        ptcMsg_.is_bigendian = true;
         sensor_msgs::PointCloud2Modifier ptcModif(ptcMsg_);
         ptcModif.setPointCloud2FieldsByString(1, "xyz");
         ptcModif.resize(ptcMsg_.width * ptcMsg_.height);
@@ -106,7 +127,7 @@ XYZData ToFCVNode::splitXYZ(float* data){
 void ToFCVNode::pubDepthImage(float* data){
     greyDepth_ = cv::Mat(height_, width_, CV_32FC1, data);
     greyDepth_.convertTo(greyDepth_, CV_8UC1, 255./ MAX_DEPTH);
-    
+
     // Grey -> Hue
     hueDepth_ = cv::Mat(height_, width_, CV_8UC3);
     cv::applyColorMap(greyDepth_, hueDepth_, cv::COLORMAP_JET);
@@ -150,8 +171,8 @@ void ToFCVNode::pubDepthPtc(XYZData &data){
             if (z <= 0)
             {
                 *iter_x = std::numeric_limits<float>::quiet_NaN();
-                *iter_y = std::numeric_limits<float>::quiet_NaN();       
-                *iter_z = std::numeric_limits<float>::quiet_NaN();                
+                *iter_y = std::numeric_limits<float>::quiet_NaN();
+                *iter_z = std::numeric_limits<float>::quiet_NaN();
             }
             else{
                 *iter_x = data.x[i];
@@ -179,7 +200,7 @@ void ToFCVNode::depthCallback(){
         infoMsg->header.frame_id = "cam_depth";
         infoMsg->header.stamp = this->get_clock()->now();
         infoPub_->publish(*infoMsg);
-        
+
         // 2D Image
         xyzData_ = splitXYZ(frameData.data());
         pubDepthImage(xyzData_.z.data());

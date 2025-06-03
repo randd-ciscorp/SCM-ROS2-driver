@@ -13,7 +13,11 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "cis_scm/Device.h"
+#ifndef INTERNAL_DRIVER
+    #include "cis_scm/Device.h"
+#else
+    #include "cis_scm/InternalDevice.hpp"
+#endif
 
 #define MAX_DEPTH 7.5
 
@@ -48,8 +52,11 @@ protected:
 
     rclcpp::TimerBase::SharedPtr timer_;
     
+#ifndef INTERNAL_DRIVER
     std::unique_ptr<Device> cap_;
-
+#else
+    std::unique_ptr<InternalDevice> cap_;
+#endif
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> depthImgPub_;
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> depthPCLPub_;
 

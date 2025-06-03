@@ -1,5 +1,5 @@
-#ifndef DEVICE_HPP
-#define DEVICE_HPP
+#ifndef INTERNALDEVICE_HPP
+#define INTERNALDEVICE_HPP
 
 #include <sys/ioctl.h>
 
@@ -7,6 +7,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+
+#include "camera.h"
+#include "tof.h"
 
 #define N_CAP_BUF	4
 
@@ -18,7 +21,7 @@
 #define E_OUTOFMEMORY	ENOMEM
 #define E_HANDLE		ENODATA
 
-namespace cis_scm {
+namespace cis_scm{
 
 inline int xioctl(int fd, uint req, void* arg){
     int r;
@@ -44,13 +47,13 @@ struct DevInfo
     int height;
 };
 
-class Device
+class InternalDevice
 { 
 public:
-    Device();
-    ~Device();
+    InternalDevice();
+    ~InternalDevice();
 
-    int connect(int height, int width);
+    int connect(const std::string& path);
     void disconnect();
 
     DevInfo getInfo() const;
@@ -59,6 +62,10 @@ public:
 
 private:
     DevInfo devInfo_;
+    cis::CameraEvent camEvent_;
+    cis::CameraIMX570 camInputDevice_;
+    cis::CalibData calibData_;
+    cis::ToFParam tofParams_;
 
     int	fd_ = -1;
 
@@ -68,9 +75,10 @@ private:
 
     bool isStreamOn_ = false;
 	
-    void initMmap();
+    void init(const std::string& path);
 
 	int errnoExit(const char *s) const;
 };
 }
+
 #endif
