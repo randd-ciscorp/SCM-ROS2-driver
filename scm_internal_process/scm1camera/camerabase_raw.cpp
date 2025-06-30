@@ -5,8 +5,8 @@ namespace cis
 	int CameraBaseRAW::open()
 	{
 		is_streaming = false;
-		
-		for(int i = 3; i < 10; ++i)
+
+		for(int i = 2; i < 10; ++i)
 		{
 			char dev_name[32];
 			sprintf(dev_name, "/dev/video%d", i);
@@ -72,7 +72,7 @@ namespace cis
 
 	int CameraBaseRAW::stream_on()
 	{
-		if(is_streaming)		
+		if(is_streaming)
 		{
 			return 0;
 		}
@@ -156,7 +156,7 @@ namespace cis
 		return stream_off();
 	}
 
-	
+
 	CameraBuffer* CameraBaseRAW::pop()
 	{
 		struct v4l2_buffer v4l2buf{};

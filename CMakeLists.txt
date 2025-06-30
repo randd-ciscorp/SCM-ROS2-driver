@@ -21,11 +21,15 @@ if(INTERNAL_DRIVER)
     include_directories(scm_internal_process/libtof)
     include_directories(scm_internal_process/scm1camera)
 
-    add_executable(tof_node src/tof_node src/tof_driver.cpp src/InternalDevice.cpp)
+    add_executable(tof_node src/tof_node src/tof_driver.cpp src/Device.cpp src/InternalDevice.cpp src/InternalDevices/ToFInternalDevice.cpp)
     target_link_libraries(tof_node cistof scm1camera)
     ament_target_dependencies(tof_node rclcpp sensor_msgs OpenCV camera_info_manager tf2)
 
-    install(TARGETS tof_node DESTINATION lib/${PROJECT_NAME})
+    add_executable(rgbd_node src/rgbd_node src/rgbd_driver.cpp src/tof_driver src/Device.cpp src/InternalDevice.cpp src/InternalDevices/ToFInternalDevice.cpp src/InternalDevices/RGBInternalDevice.cpp src/InternalDevices/RGBDInternalDevice.cpp)
+    target_link_libraries(rgbd_node cistof scm1camera)
+    ament_target_dependencies(rgbd_node rclcpp sensor_msgs OpenCV camera_info_manager tf2)
+
+    install(TARGETS tof_node rgbd_node DESTINATION lib/${PROJECT_NAME})
 else()
     #External driver
     add_executable(tof_node src/tof_node.cpp src/tof_driver.cpp src/Device.cpp)

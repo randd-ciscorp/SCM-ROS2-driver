@@ -28,14 +28,18 @@ ToFCVNode::ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & no
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm");
     importParams();
 
+}
+
+int ToFCVNode::initCap()
+{
 #ifndef INTERNAL_DRIVER
     RCLCPP_INFO(get_logger(),"EXTERNAL DRIVERRRR");
-    cap_ = std::make_unique<Device>();
+    cap_ = std::make_unique<ExternalDevice>();
     if (!cap_->connect(480, 640))
 #else
     RCLCPP_INFO(get_logger(),"INTERNAL DRIVERRRR");
-    cap_ = std::make_unique<InternalDevice>();
-    if (!cap_->connect(this->get_parameter("tof_params_path").as_string()))
+    cap_ = std::make_unique<internal::ToFInternalDevice>(this->get_parameter("tof_params_path").as_string());
+    if (!cap_->connect())
 #endif
     {
         RCLCPP_INFO(get_logger(), "Camera connected");
@@ -44,6 +48,7 @@ ToFCVNode::ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & no
     {
         RCLCPP_ERROR(get_logger(), "Camera connection failed");
     }
+    return 0;
 }
 
 void ToFCVNode::dispInfo(DevInfo devInfo) const{
@@ -84,6 +89,13 @@ void ToFCVNode::importParams(){
 }
 
 void ToFCVNode::start(){
+    if(initCap())
+    {
+        RCLCPP_ERROR(get_logger(), "Camera initialization failed");
+        rclcpp::shutdown();
+    }
+
+    cap_->isConnected();
     if (cap_->isConnected())
     {
         DevInfo devInfo = cap_->getInfo();

@@ -23,19 +23,19 @@
 #define CAMERA_BUFFER_NUM (3)
 #define CAMERA_BUFFER_NUM_RAW (8)
 
-inline int xioctl(int fd, int req, void* arg)
+inline int xioctl(int fd, uint req, void* arg)
 {
 	int r;
-	do 
+	do
 	{
 		r = ioctl(fd, req, arg);
 	} while(r == -1 && errno == EINTR);
-	return r;	
+	return r;
 }
 
 namespace cis
 {
-	struct CameraBuffer 
+	struct CameraBuffer
 	{
 		struct v4l2_buffer v4l2buf;
 		void* data;
@@ -70,7 +70,7 @@ namespace cis
 				return select(max_fd + 1, nullptr, nullptr, &e, nullptr);
 			}
 		}
-		
+
 		bool can_read(int fd)
 		{
 			return FD_ISSET(fd, &r);
@@ -94,17 +94,17 @@ namespace cis
 	};
 
 
-	class CameraBaseColor 
+	class CameraBaseColor
 	{
 	public:
 		CameraBaseColor() = delete;
-		CameraBaseColor(size_t width, size_t height, int pixelformat) 
+		CameraBaseColor(size_t width, size_t height, int pixelformat)
 			: width(width), height(height), pixelformat(pixelformat) { }
 
 		int open();
 		void close();
 		int fd() const;
-		
+
 		void init(CameraEvent* event);
 
 		int connect();
@@ -113,11 +113,14 @@ namespace cis
 		int stream_on();
 		int stream_off();
 
+        int get_width() const {return width;}
+        int get_height() const {return height;}
+
 		CameraBuffer* pop();
 		void push(CameraBuffer* buffer);
 
-		int get(int req, int intf, int param_index);	
-		void set(int req, int intf, int param_index, int value);	
+		int get(int req, int intf, int param_index);
+		void set(int req, int intf, int param_index, int value);
 
 
 	protected:
@@ -126,7 +129,7 @@ namespace cis
 		const size_t width;
 		const size_t height;
 		const int pixelformat;
-		struct v4l2_format fmt;	
+		struct v4l2_format fmt;
 
 		CameraBuffer buffer[CAMERA_BUFFER_NUM ];
 		int dma_fd[CAMERA_BUFFER_NUM];
@@ -158,7 +161,7 @@ namespace cis
 		CameraBaseRAW() = delete;
 		CameraBaseRAW(size_t width, size_t height, int pixelformat)
 		       	: width(width), height(height), pixelformat(pixelformat) { }
-		
+
 
 		int open();
 		void close();
@@ -194,13 +197,13 @@ namespace cis
 
 	class CameraOutput
 	{
-	public:		
+	public:
 		int open();
 		void close();
 		int fd() const;
 
 		void init(size_t width, size_t height, int pixelformat, CameraEvent* event);
-		
+
 		int connect();
 		int disconnect();
 

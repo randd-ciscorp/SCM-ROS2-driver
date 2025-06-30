@@ -24,7 +24,30 @@ RGBDNode::RGBDNode(const std::string node_name, const rclcpp::NodeOptions &node_
     infoRGBPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicPrefix_ + "/cam_rgb_info", 10);
     cinfo_rgb_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm");
 
+
     importRGBDParameters();
+}
+
+int RGBDNode::initCap()
+{
+#ifndef INTERNAL_DRIVER
+    RCLCPP_INFO(get_logger(),"EXTERNAL DRIVERRRR");
+    cap_ = std::make_unique<ExternalDevice>();
+    if (!cap_->connect(480, 640))
+#else
+    RCLCPP_INFO(get_logger(),"INTERNAL DRIVERRRR");
+    cap_ = std::make_unique<internal::RGBDInternalDevice>(this->get_parameter("tof_params_path").as_string(), this->get_parameter("align").as_bool());
+    if (!cap_->connect())
+#endif
+    {
+        RCLCPP_INFO(get_logger(), "Camera connected");
+    }
+    else
+    {
+        RCLCPP_ERROR(get_logger(), "Camera connection failed");
+    }
+
+    return 0;
 }
 
 void RGBDNode::importRGBDParameters()
@@ -36,10 +59,22 @@ void RGBDNode::importRGBDParameters()
     }
     RCLCPP_INFO(get_logger(), "Getting parameter");
     isPCLNoColor_ = !this->get_parameter("pointcloud_rgb").as_bool();
+
+    // Check if rgb should be aligned to depth
+    if (!this->has_parameter("align"))
+    {
+        this->declare_parameter("align", true);
+    }
 }
 
 void RGBDNode::start()
 {
+    if(initCap())
+    {
+        RCLCPP_ERROR(get_logger(), "Camera initialization failed");
+        rclcpp::shutdown();
+    }
+
     if (cap_->isConnected())
     {
         DevInfo devInfo = cap_->getInfo();
@@ -50,7 +85,7 @@ void RGBDNode::start()
         // Formating pointcloud message
         ptcMsg_.width = width_;
         ptcMsg_.height = height_;
-        ptcMsg_.is_bigendian = true;     
+        ptcMsg_.is_bigendian = true;
         sensor_msgs::PointCloud2Modifier ptcModif(ptcMsg_);
         if (isPCLNoColor_)
         {
@@ -83,8 +118,8 @@ XYZRGBData RGBDNode::splitXYZRGBData(uint8_t *xyzrgbData)
     output.xyz.y.resize(width_ * height_);
     output.xyz.z.resize(width_ * height_);
     output.rgb.resize(width_ * height_);
-    
-    XYZRGBPixel* pixelPtr = reinterpret_cast<XYZRGBPixel*>(xyzrgbData); 
+
+    XYZRGBPixel* pixelPtr = reinterpret_cast<XYZRGBPixel*>(xyzrgbData);
     for (int i = 0; i < size;i++)
     {
         output.xyz.x[i] = pixelPtr[i].x;
@@ -162,7 +197,7 @@ void RGBDNode::RGBDCallback()
     xyzrgbData.xyz.z = std::vector<float>(width_*height_);
     xyzrgbData.rgb = std::vector<cv::Vec3b>(width_*height_);
     xyzrgbData.ir = std::vector<uint8_t>(width_*height_);
-    
+
     while (rclcpp::ok() && cap_->isConnected())
     {
         if (cap_->getData(frameData_.data()) < 0)

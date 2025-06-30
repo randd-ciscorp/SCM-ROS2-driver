@@ -14,7 +14,7 @@
 #include <opencv2/opencv.hpp>
 
 #ifndef INTERNAL_DRIVER
-    #include "cis_scm/Device.h"
+    #include "cis_scm/ExternalDevice.hpp"
 #else
     #include "cis_scm/InternalDevice.hpp"
 #endif
@@ -36,7 +36,7 @@ class ToFCVNode : public rclcpp::Node
 public:
     ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
 
-    void start();
+    virtual void start();
 
 protected:
     int width_;
@@ -51,11 +51,11 @@ protected:
     XYZData xyzData_;
 
     rclcpp::TimerBase::SharedPtr timer_;
-    
+
 #ifndef INTERNAL_DRIVER
-    std::unique_ptr<Device> cap_;
+    std::unique_ptr<ExternalDevice> cap_;
 #else
-    std::unique_ptr<InternalDevice> cap_;
+    std::unique_ptr<internal::ToFInternalDevice> cap_;
 #endif
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> depthImgPub_;
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> depthPCLPub_;
@@ -69,6 +69,7 @@ protected:
     std::string cameraBaseFrame_ = "camera_base";
     std::string depthCameraFrame_ = "depth_camera_link";
 
+    virtual int initCap();
     void importParams();
 
     XYZData splitXYZ(float* data);

@@ -44,7 +44,7 @@ class RGBDNode : public ToFCVNode
 public:
     RGBDNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
 
-    void start();
+    void start() override;
 
 protected:
     std::vector<uint8_t> frameData_;
@@ -52,12 +52,17 @@ protected:
     sensor_msgs::msg::Image imgRGBMsg_;
     bool isPCLNoColor_;
 
+#ifdef INTERNAL_DRIVER
+    std::unique_ptr<internal::RGBDInternalDevice> cap_;
+#endif
+
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> rgbImgPub_;
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoRGBPub_;
     std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_rgb_;
 
     std::string rgbCameraFrame_ = "rgb_camera_link";
 
+    int initCap() override;
     void importRGBDParameters();
 
     XYZRGBData splitXYZRGBData(uint8_t *xyzrgbData);
