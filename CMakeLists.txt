@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 project(cis_scm)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -21,28 +24,45 @@ if(INTERNAL_DRIVER)
     include_directories(scm_internal_process/libtof)
     include_directories(scm_internal_process/scm1camera)
 
-    add_executable(tof_node src/tof_node src/tof_driver.cpp src/Device.cpp src/InternalDevice.cpp src/InternalDevices/ToFInternalDevice.cpp)
-    target_link_libraries(tof_node cistof scm1camera)
+    add_library(internal_device
+        src/Device.cpp
+        src/InternalDevice.cpp
+        src/InternalDevices/ToFInternalDevice.cpp
+        src/InternalDevices/RGBInternalDevice.cpp
+        src/InternalDevices/RGBDInternalDevice.cpp
+    )
+    target_link_libraries(internal_device scm1camera cistof)
+
+    add_executable(tof_node src/tof_node.cpp src/tof_driver.cpp)
+    target_link_libraries(tof_node cistof internal_device)
     ament_target_dependencies(tof_node rclcpp sensor_msgs OpenCV camera_info_manager tf2)
 
-    add_executable(rgbd_node src/rgbd_node src/rgbd_driver.cpp src/tof_driver src/Device.cpp src/InternalDevice.cpp src/InternalDevices/ToFInternalDevice.cpp src/InternalDevices/RGBInternalDevice.cpp src/InternalDevices/RGBDInternalDevice.cpp)
-    target_link_libraries(rgbd_node cistof scm1camera)
+    add_executable(rgbd_node src/rgbd_node.cpp src/rgbd_driver.cpp src/tof_driver.cpp)
+    target_link_libraries(rgbd_node cistof internal_device)
     ament_target_dependencies(rgbd_node rclcpp sensor_msgs OpenCV camera_info_manager tf2)
 
-    add_executable(rgb_node src/rgb_node src/rgb_driver.cpp src/rgb_driver src/Device.cpp src/InternalDevice.cpp src/InternalDevices/RGBInternalDevice.cpp)
-    target_link_libraries(rgb_node scm1camera)
+    add_executable(rgb_node src/rgb_node.cpp src/rgb_driver.cpp)
+    target_link_libraries(rgb_node internal_device)
     ament_target_dependencies(rgb_node rclcpp sensor_msgs OpenCV camera_info_manager tf2)
 
     install(TARGETS tof_node rgbd_node rgb_node DESTINATION lib/${PROJECT_NAME})
 else()
     #External driver
-    add_executable(tof_node src/tof_node.cpp src/tof_driver.cpp src/Device.cpp src/ExternalDevice.cpp)
+    add_library(external_device
+        src/Device.cpp
+        src/ExternalDevice.cpp
+    )
+
+    add_executable(tof_node src/tof_node.cpp src/tof_driver.cpp)
+    target_link_libraries(tof_node external_device)
     ament_target_dependencies(tof_node rclcpp sensor_msgs OpenCV camera_info_manager tf2)
 
-    add_executable(rgbd_node src/rgbd_node.cpp src/rgbd_driver.cpp src/tof_driver.cpp src/Device.cpp src/ExternalDevice.cpp)
+    add_executable(rgbd_node src/rgbd_node.cpp src/rgbd_driver.cpp src/tof_driver.cpp)
+    target_link_libraries(rgbd_node external_device)
     ament_target_dependencies(rgbd_node rclcpp sensor_msgs OpenCV camera_info_manager tf2)
 
-    add_executable(rgb_node src/rgb_node.cpp src/rgb_driver.cpp src/Device.cpp src/ExternalDevice.cpp)
+    add_executable(rgb_node src/rgb_node.cpp src/rgb_driver.cpp)
+    target_link_libraries(rgb_node external_device)
     ament_target_dependencies(rgb_node rclcpp sensor_msgs OpenCV camera_info_manager tf2)
 
     install(TARGETS tof_node rgbd_node rgb_node DESTINATION lib/${PROJECT_NAME})
