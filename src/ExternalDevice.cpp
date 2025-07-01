@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "Device.h"
+#include "cis_scm/Device.h"
 
 namespace cis_scm
 {

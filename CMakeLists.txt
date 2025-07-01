@@ -29,16 +29,23 @@ if(INTERNAL_DRIVER)
     target_link_libraries(rgbd_node cistof scm1camera)
     ament_target_dependencies(rgbd_node rclcpp sensor_msgs OpenCV camera_info_manager tf2)
 
-    install(TARGETS tof_node rgbd_node DESTINATION lib/${PROJECT_NAME})
+    add_executable(rgb_node src/rgb_node src/rgb_driver.cpp src/rgb_driver src/Device.cpp src/InternalDevice.cpp src/InternalDevices/RGBInternalDevice.cpp)
+    target_link_libraries(rgb_node scm1camera)
+    ament_target_dependencies(rgb_node rclcpp sensor_msgs OpenCV camera_info_manager tf2)
+
+    install(TARGETS tof_node rgbd_node rgb_node DESTINATION lib/${PROJECT_NAME})
 else()
     #External driver
-    add_executable(tof_node src/tof_node.cpp src/tof_driver.cpp src/Device.cpp)
+    add_executable(tof_node src/tof_node.cpp src/tof_driver.cpp src/Device.cpp src/ExternalDevice.cpp)
     ament_target_dependencies(tof_node rclcpp sensor_msgs OpenCV camera_info_manager tf2)
 
-    add_executable(rgbd_node src/rgbd_node.cpp src/rgbd_driver.cpp src/tof_driver.cpp src/Device.cpp)
+    add_executable(rgbd_node src/rgbd_node.cpp src/rgbd_driver.cpp src/tof_driver.cpp src/Device.cpp src/ExternalDevice.cpp)
     ament_target_dependencies(rgbd_node rclcpp sensor_msgs OpenCV camera_info_manager tf2)
 
-    install(TARGETS tof_node rgbd_node DESTINATION lib/${PROJECT_NAME})
+    add_executable(rgb_node src/rgb_node.cpp src/rgb_driver.cpp src/Device.cpp src/ExternalDevice.cpp)
+    ament_target_dependencies(rgb_node rclcpp sensor_msgs OpenCV camera_info_manager tf2)
+
+    install(TARGETS tof_node rgbd_node rgb_node DESTINATION lib/${PROJECT_NAME})
 endif()
 
 install(FILES cam_param.yaml DESTINATION share/${PROJECT_NAME})
