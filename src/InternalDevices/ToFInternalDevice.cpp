@@ -9,8 +9,8 @@ namespace internal{
 ToFInternalDevice::ToFInternalDevice(const std::string &path)
 {
     DevInfo devInfo {};
-    devInfo.width = camInputDevice_.get_width();
-    devInfo.height = camInputDevice_.get_height();
+    devInfo.width = 640;
+    devInfo.height = 480;
     devInfo_ = devInfo;
 
     printf("Cam inititalisation \n");
@@ -27,10 +27,11 @@ ToFInternalDevice::ToFInternalDevice(const std::string &path)
     // ToF calibs loading
     cis::init_calibdata(&calibData_, path);
     std::ifstream ifs(path + "tof_param.txt");
-	cis::ToFParam param;
-	ifs >> param.MIN_REFLECTANCE;
-	ifs >> param.MIN_CONFIDENCE;
-	ifs >> param.KILL_FLYING_DELTA;
+
+    tofParams_ = cis::ToFParam();
+	ifs >> tofParams_.MIN_REFLECTANCE;
+	ifs >> tofParams_.MIN_CONFIDENCE;
+	ifs >> tofParams_.KILL_FLYING_DELTA;
 	ifs.close();
 }
 
@@ -71,6 +72,7 @@ int ToFInternalDevice::getData(uint8_t* data)
         auto inputBuf = camInputDevice_.pop();
 
         cis::tof_calc_distance_dual((char*) inputBuf->data, (char*) data, &tofParams_, &calibData_);
+
 
         camInputDevice_.push(inputBuf);
         return 0;

@@ -253,7 +253,7 @@ namespace cis
 	class CameraIMX570 : public CameraBaseRAW
 	{
 	public:
-		CameraIMX570() : CameraBaseRAW(1280U, 3840U, V4L2_PIX_FMT_Y12) { }
+		CameraIMX570() : CameraBaseRAW(1280U, 3840U, V4L2_PIX_FMT_SBGGR12) { }
 	};
 
 	class CameraGenX320Histo : public CameraBaseRAW

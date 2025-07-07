@@ -23,13 +23,12 @@ namespace cis
 			if(strcmp((const char*)cap.driver, "mxc-isi-cap_v1") == 0)
 			{
 				_fd = fd;
-				break;
+                return 0;
 			}
 
 			::close(fd);
 		}
-
-		return 0;
+        return -1;
 	}
 
 	void CameraBaseRAW::close()

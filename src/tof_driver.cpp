@@ -95,7 +95,6 @@ void ToFCVNode::start(){
         rclcpp::shutdown();
     }
 
-    cap_->isConnected();
     if (cap_->isConnected())
     {
         DevInfo devInfo = cap_->getInfo();
@@ -137,6 +136,7 @@ XYZData ToFCVNode::splitXYZ(float* data){
 }
 
 void ToFCVNode::pubDepthImage(float* data){
+
     greyDepth_ = cv::Mat(height_, width_, CV_32FC1, data);
     greyDepth_.convertTo(greyDepth_, CV_8UC1, 255./ MAX_DEPTH);
 
@@ -149,7 +149,7 @@ void ToFCVNode::pubDepthImage(float* data){
 
     // Msg header
     auto header = std_msgs::msg::Header();
-    header.frame_id = "camera";
+    header.frame_id = "cam_depth";
     header.stamp = this->get_clock()->now();
 
     // 2D Image publishing
@@ -212,6 +212,8 @@ void ToFCVNode::depthCallback(){
         infoMsg->header.frame_id = "cam_depth";
         infoMsg->header.stamp = this->get_clock()->now();
         infoPub_->publish(*infoMsg);
+
+
 
         // 2D Image
         xyzData_ = splitXYZ(frameData.data());
