@@ -64,7 +64,7 @@ void ExternalDevice::initMmap(){
     }
 }
 
-int ExternalDevice::connect(int height, int width)
+int ExternalDevice::connect(int width, int height)
 {
     const char* deviceName = "/dev/video0";
 

@@ -24,7 +24,7 @@
 
 namespace cis_scm {
 
-inline int xioctl(int fd, uint8_t req, void* arg){
+inline int xioctl(int fd, u_int64_t req, void* arg){
     int r;
 	do {
 		r = ioctl(fd, req, arg);
