@@ -13,6 +13,8 @@
 #else
     #include "cis_scm/InternalDevice.hpp"
 #endif
+#include "cis_scm/Params.hpp"
+#include "cis_scm/Controls.hpp"
 
 namespace cis_scm
 {
@@ -22,11 +24,15 @@ class RGBNode : public rclcpp::Node
 public:
     RGBNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
 
+    void initParamHandler();
     void start();
-
+    rcl_interfaces::msg::SetParametersResult parameterCB(const std::vector<rclcpp::Parameter> &parameters);
 private:
     int width_;
     int height_;
+
+    float inte_time_;
+    OnSetParametersCallbackHandle::SharedPtr callback_handle;
 
     cv::Mat rgbImg_;
 
@@ -34,6 +40,8 @@ private:
 
     rclcpp::TimerBase::SharedPtr timer_;
 
+    std::unique_ptr<RGBParamHandler> param_handler_;
+    CameraCtrl* cam_ctrl_;
 #ifndef INTERNAL_DRIVER
     std::unique_ptr<ExternalDevice> cap_;
 #else

@@ -51,7 +51,10 @@ else()
     add_library(external_device
         src/Device.cpp
         src/ExternalDevice.cpp
+        src/Params.cpp
+        src/Controls.cpp
     )
+    ament_target_dependencies(external_device rclcpp)
 
     add_executable(tof_node src/tof_node.cpp src/tof_driver.cpp)
     target_link_libraries(tof_node external_device)

@@ -23,6 +23,12 @@ RGBNode::RGBNode(const std::string node_name, const rclcpp::NodeOptions & node_o
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm");
 
     importParams();
+
+#ifndef INTERNAL_DRIVER
+    cam_ctrl_ = new CameraCtrlExtern();
+#else
+    cam_ctrl_ = new CameraCtrlIntern();
+#endif
 }
 
 void RGBNode::importParams()
@@ -64,6 +70,12 @@ void RGBNode::importParams()
     {
         RCLCPP_ERROR(get_logger(), "ERROR: rgb_device parameter has a wrong value. Please choose between '2m1' or '8m1'.");
     }
+}
+
+void RGBNode::initParamHandler()
+{
+    auto shared_node = shared_from_this();
+    param_handler_ = std::make_unique<RGBParamHandler>(shared_node, cam_ctrl_);
 }
 
 int RGBNode::initCap()

@@ -2,7 +2,6 @@
 #define CONTROLS_HPP
 
 #include <rclcpp/parameter_client.hpp>
-#include <rcl_interfaces
 
 namespace cis_scm
 {
@@ -103,7 +102,7 @@ enum rgb_get_param
 
     // AWB
     RGB_GET_AUTO_WHITE_BALANCE = 10,
-    RGB_GET_REGET_WHITE_BALANCE_CONTROL = 11,
+    RGB_GET_RESET_WHITE_BALANCE_CONTROL = 11,
     RGB_GET_AUTO_WHITE_BALANCE_MODE = 12,
     RGB_GET_AUTO_WHITE_BALANCE_INDEX = 13,
     RGB_GET_AUTO_WHITE_BALANCE_DAMPING = 14,
@@ -154,30 +153,54 @@ enum rgb_get_param
 class CameraCtrl
 {
 public:
+    virtual void setControlInt(int ctrl, int val) = 0;
+    virtual int getControlInt(int ctrl) = 0;
 
-    int setControl();
-    int getControl();
+    virtual void setControlFloat(int ctrl, float val) = 0;
+    virtual float getControlFloat(int ctrl) = 0;
 
-private:
-    int inte_time_;
+    virtual ~CameraCtrl() = default;
 };
 
-class CameraCtrlToF : CameraCtrl
+class CameraCtrlExtern : public CameraCtrl
 {
 public:
-    void setHistoryThreshold(float val);
-    void setHistoryLength(int val);
-    void setMinReflectance(float val);
-    void setMinConfidence(float val);
-    void setKillFlyingDelta(float val);
-    void setIntegrationTime(int val);
+    void setControlInt(int ctrl, int val) override;
+    int getControlInt(int ctrl) override;
 
-    float getHistoryThreshold();
-    int getHistoryLength();
-    float getMinReflectance();
-    float getMinConfidence();
-    float getKillFlyingDelta();
-    int getIntegrationTime();
+    void setControlFloat(int ctrl, float val) override;
+    float getControlFloat(int ctrl) override;
 };
+
+class CameraCtrlIntern : public CameraCtrl
+{
+public:
+    void setControlInt(int ctrl, int val) override;
+    int getControlInt(int ctrl) override;
+
+    void setControlFloat(int ctrl, float val) override;
+    float getControlFloat(int ctrl) override;
+};
+
+
+// class ToFControl
+
+// class CameraCtrlToF : CameraCtrl
+// {
+// public:
+//     void setHistoryThreshold(float val);
+//     void setHistoryLength(int val);
+//     void setMinReflectance(float val);
+//     void setMinConfidence(float val);
+//     void setKillFlyingDelta(float val);
+//     void setIntegrationTime(int val);
+
+//     float getHistoryThreshold();
+//     int getHistoryLength();
+//     float getMinReflectance();
+//     float getMinConfidence();
+//     float getKillFlyingDelta();
+//     int getIntegrationTime();
+// };
 }
 #endif //CONTROLS_HPP
