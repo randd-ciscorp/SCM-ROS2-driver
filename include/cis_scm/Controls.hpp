@@ -165,11 +165,23 @@ public:
 class CameraCtrlExtern : public CameraCtrl
 {
 public:
+    CameraCtrlExtern();
+    ~CameraCtrlExtern();
+
     void setControlInt(int ctrl, int val) override;
     int getControlInt(int ctrl) override;
 
     void setControlFloat(int ctrl, float val) override;
     float getControlFloat(int ctrl) override;
+
+    bool isCtrlOk() {return ctrl_ok;};
+
+private:
+    // CIS Protocol device
+    int fd_;
+    bool ctrl_ok = true;
+
+    void configSerial();
 };
 
 class CameraCtrlIntern : public CameraCtrl

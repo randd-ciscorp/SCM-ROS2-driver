@@ -12,14 +12,20 @@ namespace cis_scm
 class RGBParamHandler
 {
 public:
-    RGBParamHandler() : cam_ctrl_(nullptr) {};
-    RGBParamHandler(std::shared_ptr<rclcpp::Node> rgb_node_, CameraCtrl* cam_ctrl);
+    RGBParamHandler() : rgb_node_(nullptr) {};
+    RGBParamHandler(std::shared_ptr<rclcpp::Node> rgb_node_);
 
 private:
     rclcpp::Logger logger_ = rclcpp::get_logger("Camera Parameter Handler");
 
     std::shared_ptr<rclcpp::Node> rgb_node_;
-    CameraCtrl* cam_ctrl_;
+
+#ifndef INTERNAL_DEVICE
+    std::unique_ptr<CameraCtrlExtern> cam_ctrl_;
+#else
+    std::unique_ptr<CameraCtrlIntern> cam_ctrl_;
+#endif
+
 
     template <typename T>
     void declareParam(const std::string &param_name, T default_val);

@@ -24,11 +24,6 @@ RGBNode::RGBNode(const std::string node_name, const rclcpp::NodeOptions & node_o
 
     importParams();
 
-#ifndef INTERNAL_DRIVER
-    cam_ctrl_ = new CameraCtrlExtern();
-#else
-    cam_ctrl_ = new CameraCtrlIntern();
-#endif
 }
 
 void RGBNode::importParams()
@@ -75,7 +70,7 @@ void RGBNode::importParams()
 void RGBNode::initParamHandler()
 {
     auto shared_node = shared_from_this();
-    param_handler_ = std::make_unique<RGBParamHandler>(shared_node, cam_ctrl_);
+    param_handler_ = std::make_unique<RGBParamHandler>(shared_node);
 }
 
 int RGBNode::initCap()
@@ -160,7 +155,7 @@ void RGBNode::imgCallback()
     else
     {
         cv::Mat imgData(height_, width_, CV_8UC3);
-        if (cap_->getData(imgData.data))
+        if (!cap_->getData(imgData.data))
         {
             // Cam Info
             auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());

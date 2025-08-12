@@ -41,7 +41,6 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
 
     std::unique_ptr<RGBParamHandler> param_handler_;
-    CameraCtrl* cam_ctrl_;
 #ifndef INTERNAL_DRIVER
     std::unique_ptr<ExternalDevice> cap_;
 #else

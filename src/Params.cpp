@@ -9,8 +9,20 @@
 
 namespace cis_scm
 {
-RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node, CameraCtrl* ctrl) : rgb_node_(node), cam_ctrl_(ctrl)
+RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node) : rgb_node_(node)
 {
+
+#ifndef INTERNAL_DEVICE
+    cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
+    if (!cam_ctrl_->isCtrlOk())
+    {
+        rclcpp::shutdown();
+    }
+
+#else
+    cam_ctrl_ = std::make_unique<CameraCtrlIntern>();
+#endif
+
     declareParam("manual_gain", 0.0);
     declareParam("dewarp_bypass", true);
 
@@ -19,6 +31,7 @@ RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node, CameraCtrl*
             return this->setRGBParamCB(param);
         }
     );
+    RCLCPP_INFO(rgb_node_->get_logger(), "Parameter Handler initialized");
 }
 
 template <typename T>
@@ -58,6 +71,7 @@ rcl_interfaces::msg::SetParametersResult RGBParamHandler::setRGBParamCB(const st
 
     for (const auto &param : parameters)
     {
+    RCLCPP_INFO(rgb_node_->get_logger(), "Parameter settttttttting");
         if (param.get_name() == "manual_gain")
         {
             setParam(rgb_set_param::RGB_SET_MANUAL_GAIN, param, rclcpp::ParameterType::PARAMETER_DOUBLE);
