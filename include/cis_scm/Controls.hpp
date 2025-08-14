@@ -159,6 +159,9 @@ public:
     virtual void setControlFloat(int ctrl, float val) = 0;
     virtual float getControlFloat(int ctrl) = 0;
 
+    virtual void setControlBool(int ctrl, bool val) = 0;
+    virtual bool getControlBool(int ctrl) = 0;
+
     virtual ~CameraCtrl() = default;
 };
 
@@ -173,6 +176,9 @@ public:
 
     void setControlFloat(int ctrl, float val) override;
     float getControlFloat(int ctrl) override;
+
+    void setControlBool(int ctrl, bool val) override;
+    bool getControlBool(int ctrl) override;
 
     bool isCtrlOk() {return ctrl_ok;};
 

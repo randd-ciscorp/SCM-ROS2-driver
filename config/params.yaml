@@ -1,0 +1,15 @@
+rgb_node:
+  ros__parameters:
+    isp:
+      ae:
+        enable : true
+        gain: 1.0
+        integration time: 0.0
+      awb:
+        enable: true
+        mode: true
+        index: 0
+      dewarp bypass: true
+      gamma correction: true
+    cam name: "SCM-2M1"
+

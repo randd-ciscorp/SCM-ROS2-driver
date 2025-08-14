@@ -54,6 +54,7 @@ void CameraCtrlExtern::setControlInt(int ctrl, int val)
     std::stringstream ss;
     ss << "SU " << ctrl << " " << val << "\n";
     std::string cmd = ss.str();
+    std::cout << cmd << std::endl;
     if(write(fd_, cmd.c_str(), cmd.length()) <= 0)
     {
        std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
@@ -61,6 +62,18 @@ void CameraCtrlExtern::setControlInt(int ctrl, int val)
 }
 
 void CameraCtrlExtern::setControlFloat(int ctrl, float val)
+{
+    std::stringstream ss;
+    ss << "SU " << ctrl << " " << val << "\n";
+    std::string cmd = ss.str();
+    std::cout << cmd << std::endl;
+    if(write(fd_, cmd.c_str(), cmd.length()) <= 0)
+    {
+       std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
+    }
+}
+
+void CameraCtrlExtern::setControlBool(int ctrl, bool val)
 {
     std::stringstream ss;
     ss << "SU " << ctrl << " " << val << "\n";
@@ -100,6 +113,23 @@ float CameraCtrlExtern::getControlFloat(int ctrl)
     int ret_val = 0;
     char r_buf[sizeof(float)];
     while(read(fd_, r_buf, sizeof(float)) <= (ssize_t)sizeof(float))
+    {
+        write(fd_, cmd.c_str(), cmd.length());
+    }
+    return ret_val;
+}
+
+bool CameraCtrlExtern::getControlBool(int ctrl)
+{
+    // ctrl value query
+    std::stringstream ss;
+    ss << "GU " << ctrl;
+    std::string cmd = ss.str();
+
+    // get ctrl value
+    int ret_val = 0;
+    char r_buf[sizeof(bool)];
+    while(read(fd_, r_buf, sizeof(bool)) <= (ssize_t)sizeof(bool))
     {
         write(fd_, cmd.c_str(), cmd.length());
     }
