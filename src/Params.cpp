@@ -32,7 +32,7 @@ RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node) : rgb_node_
     declareParam(IspRosParams::awb_mode, true);
     declareParam(IspRosParams::awb_index, 0, setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 4, 1));
 
-    declareParam(IspRosParams::dewarp_bypass, true);
+    declareParam(IspRosParams::dewarp_bypass, false);
 
     declareParam(IspRosParams::gamma_correction, true);
 
@@ -54,7 +54,8 @@ rcl_interfaces::msg::ParameterDescriptor RGBParamHandler::setParamDescriptor(uin
         rcl_interfaces::msg::IntegerRange frange{};
         frange.from_value = min;
         frange.to_value = max;
-        frange.step = step;
+        // step constraints are not enforced by rqt
+        //frange.step = step;
         desc.integer_range.push_back(frange);
         break;
     }
@@ -62,7 +63,8 @@ rcl_interfaces::msg::ParameterDescriptor RGBParamHandler::setParamDescriptor(uin
         rcl_interfaces::msg::FloatingPointRange irange{};
         irange.from_value = min;
         irange.to_value = max;
-        irange.step = step;
+        // step constraints are not enforced by rqt
+        //irange.step = step;
         desc.floating_point_range.push_back(irange);
         break;
     }

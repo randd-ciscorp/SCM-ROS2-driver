@@ -28,15 +28,21 @@ void CameraCtrlExtern::configSerial()
         perror("Error from tcgetattr");
     }
 
-    tty.c_lflag |= (CLOCAL | CREAD);
+    tty.c_cflag |= (CLOCAL | CREAD);
     tty.c_cflag &= ~PARENB;
     tty.c_cflag &= ~CSTOPB;             // 1 stop bit
     tty.c_cflag &= ~CSIZE;              // Clear current character size mask
     tty.c_cflag |= CS8;                 // 8 data bits
     tty.c_cflag &= ~CRTSCTS;            // No hardware flow control
+    tty.c_iflag &= ~(IXON | IXOFF | IXANY);  // No software flow control
+    tty.c_oflag &= ~OPOST;           // No output processing
+    tty.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);  // Non-canonical mode
 
     cfsetospeed(&tty, B115200);
     cfsetispeed(&tty, B115200);
+
+    tty.c_cc[VMIN] = 0;
+    tty.c_cc[VTIME] = 10;
 
     if (tcsetattr(fd_, TCSANOW, &tty) != 0)
     {
@@ -52,37 +58,40 @@ CameraCtrlExtern::~CameraCtrlExtern()
 void CameraCtrlExtern::setControlInt(int ctrl, int val)
 {
     std::stringstream ss;
-    ss << "SU " << ctrl << " " << val << "\n";
+    ss << "SU " << ctrl << " " << val << "\r\n";
     std::string cmd = ss.str();
     std::cout << cmd << std::endl;
     if(write(fd_, cmd.c_str(), cmd.length()) <= 0)
     {
        std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
     }
+    tcdrain(fd_);
 }
 
 void CameraCtrlExtern::setControlFloat(int ctrl, float val)
 {
     std::stringstream ss;
-    ss << "SU " << ctrl << " " << val << "\n";
+    ss << "SU " << ctrl << " " << val << "\r\n";
     std::string cmd = ss.str();
     std::cout << cmd << std::endl;
     if(write(fd_, cmd.c_str(), cmd.length()) <= 0)
     {
        std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
     }
+    tcdrain(fd_);
 }
 
 void CameraCtrlExtern::setControlBool(int ctrl, bool val)
 {
     std::stringstream ss;
-    ss << "SU " << ctrl << " " << val << "\n";
+    ss << "SU " << ctrl << " " << val << "\r\n";
     std::string cmd = ss.str();
     std::cout << cmd << std::endl;
     if(write(fd_, cmd.c_str(), cmd.length()) <= 0)
     {
        std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
     }
+    tcdrain(fd_);
 }
 
 int CameraCtrlExtern::getControlInt(int ctrl)
@@ -99,6 +108,7 @@ int CameraCtrlExtern::getControlInt(int ctrl)
     {
         write(fd_, cmd.c_str(), cmd.length());
     }
+    tcdrain(fd_);
     return ret_val;
 }
 
@@ -116,6 +126,7 @@ float CameraCtrlExtern::getControlFloat(int ctrl)
     {
         write(fd_, cmd.c_str(), cmd.length());
     }
+    tcdrain(fd_);
     return ret_val;
 }
 
@@ -133,6 +144,7 @@ bool CameraCtrlExtern::getControlBool(int ctrl)
     {
         write(fd_, cmd.c_str(), cmd.length());
     }
+    tcdrain(fd_);
     return ret_val;
 }
 
