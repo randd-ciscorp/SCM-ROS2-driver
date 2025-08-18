@@ -7,7 +7,6 @@ rgb_node:
         integration time: 0.0
       awb:
         enable: true
-        mode: true
         index: 0
       dewarp bypass: true
       gamma correction: true

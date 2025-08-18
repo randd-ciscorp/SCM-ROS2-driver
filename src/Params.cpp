@@ -1,11 +1,14 @@
 #include "cis_scm/Params.hpp"
 
 #include <stdlib.h>
+#include <chrono>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rcl_interfaces/msg/set_parameters_result.hpp>
 
 #include <cis_scm/Controls.hpp>
+
+using namespace std::chrono_literals;
 
 namespace cis_scm
 {
@@ -29,7 +32,6 @@ RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node) : rgb_node_
     declareParam(IspRosParams::manual_gain, 1.0, setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 1.0, 16.0, 0.1));
 
     declareParam(IspRosParams::awb_enable, true);
-    declareParam(IspRosParams::awb_mode, true);
     declareParam(IspRosParams::awb_index, 0, setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 4, 1));
 
     declareParam(IspRosParams::dewarp_bypass, false);
@@ -140,14 +142,22 @@ rcl_interfaces::msg::SetParametersResult RGBParamHandler::setRGBParamCB(const st
         else if (param.get_name() == IspRosParams::awb_enable)
         {
             setParam(rgb_set_param::RGB_SET_AUTO_WHITE_BALANCE, param, rclcpp::ParameterType::PARAMETER_BOOL);
-        }
-        else if (param.get_name() == IspRosParams::awb_mode)
-        {
-            setParam(rgb_set_param::RGB_SET_AUTO_WHITE_BALANCE_MODE, param, rclcpp::ParameterType::PARAMETER_BOOL);
+            rclcpp::sleep_for(100ms);
+            cam_ctrl_->setControlBool(rgb_set_param::RGB_SET_RESET_WHITE_BALANCE_CONTROL, true);
         }
         else if (param.get_name() == IspRosParams::awb_index)
         {
+            cam_ctrl_->setControlBool(rgb_set_param::RGB_SET_AUTO_WHITE_BALANCE, false);
+            rclcpp::sleep_for(100ms);
+            cam_ctrl_->setControlInt(rgb_set_param::RGB_SET_AUTO_WHITE_BALANCE_MODE, 1);
+
+            rclcpp::sleep_for(100ms);
             setParam(rgb_set_param::RGB_SET_AUTO_WHITE_BALANCE_INDEX, param, rclcpp::ParameterType::PARAMETER_INTEGER);
+            rclcpp::sleep_for(100ms);
+            cam_ctrl_->setControlBool(rgb_set_param::RGB_SET_RESET_WHITE_BALANCE_CONTROL, true);
+            rclcpp::sleep_for(100ms);
+            cam_ctrl_->setControlBool(rgb_set_param::RGB_SET_AUTO_WHITE_BALANCE, true);
+
         }
         else if (param.get_name() == IspRosParams::dewarp_bypass)
         {
