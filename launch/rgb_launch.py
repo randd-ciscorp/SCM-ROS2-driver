@@ -1,14 +1,21 @@
+import os
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from ament_index_python import get_package_share_directory
 
 def generate_launch_description():
+
+    config = os.path.join(
+        get_package_share_directory('cis_scm'), 'config', 'params.yaml'
+    )
+
     return LaunchDescription([
         Node(
             package="cis_scm",
             namespace="cis_scm",
-            executable="tof_node",
-            name="tof_node",
-            parameters=[{"camera_params": "package://cis_scm/cam_param.yaml"}]
+            executable="rgb_node",
+            name="rgb_node",
+            parameters=[{"camera_params": "package://cis_scm/cam_param.yaml"}, config]
         ),
         Node(
             package="tf2_ros",

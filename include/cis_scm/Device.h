@@ -2,10 +2,14 @@
 #define DEVICE_HPP
 
 #include <sys/ioctl.h>
+#include <errno.h>
 
 #include <cerrno>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <string.h>
 #include <string>
 
 #define N_CAP_BUF	4
@@ -18,12 +22,25 @@
 #define E_OUTOFMEMORY	ENOMEM
 #define E_HANDLE		ENODATA
 
-inline int xioctl(int fd, uint req, void* arg){
+namespace cis_scm {
+
+inline int xioctl(int fd, u_int64_t req, void* arg){
     int r;
 	do {
 		r = ioctl(fd, req, arg);
 	} while(r == -1 && errno == EINTR);
 	return r;
+}
+
+inline int errnoExit(const char *s){
+    fprintf(stderr, "'%s': '%d, %s \n", s, errno, strerror(errno));
+    exit(EXIT_FAILURE);
+    return errno;
+}
+
+inline int errnoPrint(const char *s){
+    fprintf(stderr, "'%s': '%d, %s \n", s, errno, strerror(errno));
+    return errno;
 }
 
 struct RequestBuffer
@@ -43,32 +60,24 @@ struct DevInfo
 };
 
 class Device
-{ 
-public:
+{
+protected:
     Device();
     ~Device();
 
-    int connect(int height, int width);
-    void disconnect();
-
-    DevInfo getInfo() const;
-	int getData(uint8_t* data);
+public:
+    virtual DevInfo getInfo() const = 0;
+	virtual int getData(uint8_t* data) = 0;
     bool isConnected() const;
 
-private:
+protected:
     DevInfo devInfo_;
 
     int	fd_ = -1;
-
-	u_int8_t *data_;
     unsigned int bufInd_;
 	struct RequestBuffer* buffers_;
 
     bool isStreamOn_ = false;
-	
-    void initMmap();
-
-	int errnoExit(const char *s) const;
 };
-
+}
 #endif
