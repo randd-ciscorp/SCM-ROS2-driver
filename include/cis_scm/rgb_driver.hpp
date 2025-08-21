@@ -5,6 +5,7 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <camera_info_manager/camera_info_manager.hpp>
+#include <image_transport/image_transport.hpp>
 
 #include <opencv2/opencv.hpp>
 
@@ -22,7 +23,7 @@ namespace cis_scm
 class RGBNode : public rclcpp::Node
 {
 public:
-    RGBNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
+    RGBNode(const std::string node_name, const rclcpp::NodeOptions &get_node_options);
 
     void initParamHandler();
     void start();
@@ -40,16 +41,17 @@ private:
 
     rclcpp::TimerBase::SharedPtr timer_;
 
-    std::unique_ptr<RGBParamHandler> param_handler_;
 #ifndef INTERNAL_DRIVER
     std::unique_ptr<ExternalDevice> cap_;
 #else
     std::unique_ptr<internal::RGBInternalDevice> cap_;
 #endif
 
-    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> imgPub_;
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoPub_;
     std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
+
+    std::shared_ptr<image_transport::ImageTransport> it_;
+    image_transport::Publisher imgPub_;
 
     std::string topicPrefix_ = "camera/rgb";
     std::string cameraBaseFrame_ = "camera_base";

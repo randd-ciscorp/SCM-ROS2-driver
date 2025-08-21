@@ -9,9 +9,8 @@
 #include <string>
 
 #include "Device.h"
-#include "camera.h"
 #include "tof.h"
-
+#include "scmcap.h"
 #define N_CAP_BUF	4
 
 // Error type
@@ -73,8 +72,9 @@ class RGBInternalDevice : public InternalDevice
 {
 public:
     RGBInternalDevice(){};
-    RGBInternalDevice(cis::CameraAR0234& camInputDevice);
-    RGBInternalDevice(cis::CameraIMX715& camInputDevice);
+    RGBInternalDevice(cis::CameraAR0234* camInputDevice);
+    RGBInternalDevice(cis::CameraIMX715* camInputDevice);
+    ~RGBInternalDevice();
 
     int connect() override;
     void disconnect() override;
@@ -82,7 +82,7 @@ public:
     int getData(uint8_t *data) override;
 
 private:
-    cis::CameraBaseColor* camInputDevice_;
+    cis::CameraInputColor* camInputDevice_;
 };
 
 class RGBDInternalDevice : public InternalDevice

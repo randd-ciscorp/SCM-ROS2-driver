@@ -3,6 +3,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
+#include <image_transport/image_transport.hpp>
 #include <opencv2/opencv.hpp>
 
 #ifndef INTERNAL_DRIVER
@@ -11,19 +12,19 @@
 #include "cis_scm/InternalDevice.hpp"
 #endif
 
+#include "scmcap.h"
+
 using namespace std::literals::chrono_literals;
 namespace cis_scm
 {
 
 RGBNode::RGBNode(const std::string node_name, const rclcpp::NodeOptions & node_options) : Node(node_name, node_options)
 {
-    imgPub_ = create_publisher<sensor_msgs::msg::Image>(topicPrefix_ + "img_rgb", 10);
     infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicPrefix_ + "/cam_info", 10);
 
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm");
 
     importParams();
-
 }
 
 void RGBNode::importParams()
@@ -69,17 +70,18 @@ void RGBNode::importParams()
 
 void RGBNode::initParamHandler()
 {
-    auto shared_node = shared_from_this();
-    param_handler_ = std::make_unique<RGBParamHandler>(shared_node);
+    it_ = std::make_shared<image_transport::ImageTransport>(shared_from_this());
+    imgPub_ = it_->advertise(topicPrefix_ + "/image_raw", 1);
 }
 
 int RGBNode::initCap()
 {
 #ifndef INTERNAL_DRIVER
     cap_ = std::make_unique<ExternalDevice>();
+
     if(!cap_->connect(width_, height_))
 #else
-    cap_ = std::make_unique<internal::RGBInternalDevice>();
+    cap_ = std::make_unique<internal::RGBInternalDevice>(new cis::CameraAR0234());
     if(!cap_->connect())
 #endif
     {
@@ -116,7 +118,7 @@ void RGBNode::start(){
         height_ = devInfo.height;
 
         RCLCPP_INFO(get_logger(), "Start capturing");
-        timer_ = this->create_wall_timer(30ms, std::bind(&RGBNode::imgCallback, this));
+        timer_ = this->create_wall_timer(33ms, std::bind(&RGBNode::imgCallback, this));
     }
     else
     {
@@ -137,15 +139,16 @@ void RGBNode::pubImage(uint8_t *data)
     imgMsg_.header = header;
     imgMsg_.width = width_;
     imgMsg_.height = height_;
-    imgMsg_.encoding = sensor_msgs::image_encodings::YUV422_YUY2;
-    imgMsg_.step =  width_ * 2;
+    imgMsg_.encoding = sensor_msgs::image_encodings::BGR8;
+    imgMsg_.step =  width_ * 3;
     imgMsg_.is_bigendian = true;
     imgMsg_.data.assign(data, data + imgMsg_.step * imgMsg_.height);
-    imgPub_->publish(std::move(imgMsg_));
+    imgPub_.publish(std::move(imgMsg_));
 }
 
 void RGBNode::imgCallback()
 {
+    auto st = this->now();
     if (!cap_->isConnected())
     {
         RCLCPP_ERROR(get_logger(), "Camera connection lost or unavailable");
@@ -154,9 +157,10 @@ void RGBNode::imgCallback()
     }
     else
     {
-        cv::Mat imgData(height_, width_, CV_8UC3);
+        cv::Mat imgData(height_, width_, CV_8UC2);
         if (!cap_->getData(imgData.data))
         {
+            cv::resize(imgData, imgData, cv::Size(width_, height_));
             // Cam Info
             auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());
             infoMsg->header.frame_id = "cam_depth";
@@ -164,9 +168,12 @@ void RGBNode::imgCallback()
             infoPub_->publish(*infoMsg);
 
             // 2D image
+            cv::cvtColor(imgData, imgData, cv::COLOR_YUV2BGR_YUYV);
             pubImage(imgData.data);
         }
     }
+    auto sp = this->now();
+    //RCLCPP_INFO(get_logger(),"Cb time: %f ms", (sp- st).nanoseconds() / 1e6);
 }
 
 } //namespace cis_scm

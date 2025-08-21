@@ -15,7 +15,7 @@ namespace cis_scm
 RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node) : rgb_node_(node)
 {
 
-#ifndef INTERNAL_DEVICE
+#ifndef INTERNAL_DRIVER
     cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
     if (!cam_ctrl_->isCtrlOk())
     {
@@ -166,6 +166,10 @@ rcl_interfaces::msg::SetParametersResult RGBParamHandler::setRGBParamCB(const st
         else if (param.get_name() == IspRosParams::gamma_correction)
         {
             setParam(rgb_set_param::RGB_SET_GAMMA, param, rclcpp::ParameterType::PARAMETER_BOOL);
+        }
+        else if (param.get_name() == "camera.rgb.image_raw.enable_pub_plugins")
+        {
+            // Parameter handled by image_transport
         }
         else
         {
