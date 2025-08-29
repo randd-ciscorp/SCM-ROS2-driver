@@ -1,11 +1,11 @@
 #include "cis_scm/InternalDevice.hpp"
 
-#include <fstream>
-
 #include "tof.h"
+#include "scmcap.h"
 
 namespace cis_scm{
 namespace internal{
+
 ToFInternalDevice::ToFInternalDevice(const std::string &path)
 {
     DevInfo devInfo {};
@@ -31,23 +31,30 @@ ToFInternalDevice::~ToFInternalDevice()
 
 int ToFInternalDevice::connect()
 {
-    printf("Conneting...");
     camInputDevice_.open("/dev/mxc_isi.0.capture");
-    if (camInputDevice_.streaming())
+    if (!camInputDevice_.connect())
     {
-        printf("Cam inititalised \n");
-        isStreamOn_ = true;
-        return 0;
+        if (!camInputDevice_.stream_on())
+        {
+            isStreamOn_ = true;
+            return 0;
+        }
+        else
+        {
+            perror("Could not start streaming");
+        }
     }
     else
     {
         perror("Connection failed");
-        return -1;
     }
+    isStreamOn_ = false;
+    return -1;
 }
 
 void ToFInternalDevice::disconnect()
 {
+    camInputDevice_.stream_off();
     camInputDevice_.disconnect();
 }
 
@@ -55,12 +62,15 @@ int ToFInternalDevice::getData(uint8_t* data)
 {
     if (camInputDevice_.streaming())
     {
-        auto inputBuf = camInputDevice_.pop();
+        if (cis::connection_handler(&camEvent_, &camInputDevice_))
+        {
+            auto inputBuf = camInputDevice_.pop();
 
-        cis::tof_calc_distance_dual((char*) inputBuf->data, (char*) data, &tofParams_, &calibData_);
+            cis::tof_calc_distance_dual((char*) inputBuf->data, (char*) data, &tofParams_, &calibData_);
 
-        camInputDevice_.push(inputBuf);
-        return 0;
+            camInputDevice_.push(inputBuf);
+            return 0;
+        }
     }
     else
     {
@@ -68,5 +78,5 @@ int ToFInternalDevice::getData(uint8_t* data)
     }
     return -1;
 }
-}
-}
+} // namespace internal
+} // namespace cis_scm

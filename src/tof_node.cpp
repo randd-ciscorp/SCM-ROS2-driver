@@ -10,6 +10,7 @@ int main(int argc, char* argv[]){
 
     rclcpp::init(argc, argv);
     std::shared_ptr<cis_scm::ToFCVNode> tof_node = std::make_shared<cis_scm::ToFCVNode>("tof_node", options);
+    tof_node->initPointCloudTransport();
     tof_node->start();
     rclcpp::spin(tof_node);
     rclcpp::shutdown();
