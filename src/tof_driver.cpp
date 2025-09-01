@@ -8,6 +8,8 @@
 #include <rclcpp/callback_group.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
+#include <point_cloud_transport/point_cloud_transport.hpp>
+#include <rmw/types.h>
 #include <opencv2/opencv.hpp>
 
 #ifndef INTERNAL_DRIVER
@@ -36,9 +38,15 @@ ToFCVNode::ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & no
 
 void ToFCVNode::initPointCloudTransport()
 {
-    rclcpp::QoS qos(10);
-    qos.get_rmw_qos_profile();
-    depthPCLPub_ = point_cloud_transport::create_publisher(shared_from_this(), topicPrefix_ + "/pcl_depth");
+    // Humble ver. of point_cloud_transport does not use rclcpp QoS yet
+    rmw_qos_profile_t pc_qos = rmw_qos_profile_sensor_data;
+    pc_qos.depth = 30;
+    // Reliable because too many fragmented dataframe
+    pc_qos.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
+    pc_qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;
+    pc_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;
+
+    depthPCLPub_ = point_cloud_transport::create_publisher(shared_from_this(), topicPrefix_ + "/pcl_depth", pc_qos);
 
 }
 
