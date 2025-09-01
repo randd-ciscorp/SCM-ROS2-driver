@@ -36,7 +36,7 @@ private:
 
     std::shared_ptr<rclcpp::Node> rgb_node_;
 
-#ifndef INTERNAL_DEVICE
+#ifndef INTERNAL_DRIVER
     std::unique_ptr<CameraCtrlExtern> cam_ctrl_;
 #else
     std::unique_ptr<CameraCtrlIntern> cam_ctrl_;

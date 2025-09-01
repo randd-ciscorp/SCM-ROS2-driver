@@ -10,6 +10,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <camera_info_manager/camera_info_manager.hpp>
+#include <point_cloud_transport/point_cloud_transport.hpp>
 
 #include <opencv2/opencv.hpp>
 
@@ -36,6 +37,8 @@ class ToFCVNode : public rclcpp::Node
 public:
     ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
 
+    void initPointCloudTransport();
+
     virtual void start();
 
 protected:
@@ -58,12 +61,16 @@ protected:
     std::unique_ptr<internal::ToFInternalDevice> cap_;
 #endif
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> depthImgPub_;
-    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> depthPCLPub_;
+
+    point_cloud_transport::Publisher depthPCLPub_;
 
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoPub_;
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoDepthPub_;
     std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
     std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_depth_;
+
+    rclcpp::CallbackGroup::SharedPtr crit_cb_grp_;
+    rclcpp::CallbackGroup::SharedPtr non_crit_cb_grp_;
 
     std::string topicPrefix_ = "camera/depth";
     std::string cameraBaseFrame_ = "camera_base";

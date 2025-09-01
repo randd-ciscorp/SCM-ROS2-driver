@@ -192,11 +192,16 @@ private:
 class CameraCtrlIntern : public CameraCtrl
 {
 public:
+    CameraCtrlIntern() {};
+
     void setControlInt(int ctrl, int val) override;
     int getControlInt(int ctrl) override;
 
     void setControlFloat(int ctrl, float val) override;
     float getControlFloat(int ctrl) override;
+
+    void setControlBool(int ctrl, bool val) override;
+    bool getControlBool(int ctrl) override;
 };
 
 

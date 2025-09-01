@@ -185,7 +185,7 @@ void RGBDNode::pubRGBDPtc(XYZRGBData& xyzrgbData)
             iter_rgb[2] = xyzrgbData.rgb[i][2];
         }
     }
-    depthPCLPub_->publish(ptcMsg_);
+    depthPCLPub_.publish(ptcMsg_);
 }
 
 void RGBDNode::RGBDCallback()

@@ -5,8 +5,11 @@
 #include <vector>
 
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/callback_group.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
+#include <point_cloud_transport/point_cloud_transport.hpp>
+#include <rmw/types.h>
 #include <opencv2/opencv.hpp>
 
 #ifndef INTERNAL_DRIVER
@@ -20,13 +23,30 @@ using namespace std::chrono_literals;
 namespace cis_scm
 {
 
-ToFCVNode::ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & node_options) : Node(node_name, node_options){
+ToFCVNode::ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & node_options) : Node(node_name, node_options)
+{
+    crit_cb_grp_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    non_crit_cb_grp_ = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+
     depthImgPub_ = create_publisher<sensor_msgs::msg::Image>(topicPrefix_ + "/img_depth", 10);
-    depthPCLPub_ = create_publisher<sensor_msgs::msg::PointCloud2>(topicPrefix_ + "/pcl_depth", 10);
     infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicPrefix_ + "/cam_info", 10);
 
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm");
     importParams();
+
+}
+
+void ToFCVNode::initPointCloudTransport()
+{
+    // Humble ver. of point_cloud_transport does not use rclcpp QoS yet
+    rmw_qos_profile_t pc_qos = rmw_qos_profile_sensor_data;
+    pc_qos.depth = 30;
+    // Reliable because too many fragmented dataframe
+    pc_qos.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
+    pc_qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;
+    pc_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;
+
+    depthPCLPub_ = point_cloud_transport::create_publisher(shared_from_this(), topicPrefix_ + "/pcl_depth", pc_qos);
 
 }
 
@@ -84,7 +104,7 @@ void ToFCVNode::importParams(){
     if (!this->has_parameter("tof_params_path"))
     {
         // Default path in SCM-ToF1, probably need to change
-        this->declare_parameter("tof_params_path", "/home/root/tof_params");
+        this->declare_parameter("tof_params_path", "/root/tof1/");
     }
 }
 
@@ -99,8 +119,8 @@ void ToFCVNode::start(){
     {
         DevInfo devInfo = cap_->getInfo();
         dispInfo(devInfo);
-        width_ = devInfo.width;
-        height_ = devInfo.height;
+        width_ = 640;
+        height_ = 480;
 
         // Formating pointcloud message
         ptcMsg_.width = width_;
@@ -108,10 +128,10 @@ void ToFCVNode::start(){
         ptcMsg_.is_bigendian = true;
         sensor_msgs::PointCloud2Modifier ptcModif(ptcMsg_);
         ptcModif.setPointCloud2FieldsByString(1, "xyz");
-        ptcModif.resize(ptcMsg_.width * ptcMsg_.height);
+        // ptcModif.resize(ptcMsg_.width * ptcMsg_.height);
 
         RCLCPP_INFO(get_logger(), "Start capturing");
-        timer_ = this->create_wall_timer(30ms, std::bind(&ToFCVNode::depthCallback, this));
+        timer_ = this->create_wall_timer(66.666ms, std::bind(&ToFCVNode::depthCallback, this), crit_cb_grp_);
     }
     else
     {
@@ -193,41 +213,37 @@ void ToFCVNode::pubDepthPtc(XYZData &data){
             }
         }
 
-        depthPCLPub_->publish(ptcMsg_);
+        depthPCLPub_.publish(ptcMsg_);
 }
 
 void ToFCVNode::depthCallback(){
     // Init 2D Mats
 
     std::vector<float> frameData = std::vector<float>(width_ * height_ * 3);
-    while (rclcpp::ok() && cap_->isConnected())
-    {
-        if(cap_->getData(reinterpret_cast<uint8_t*>(frameData.data()))){
-            cap_->disconnect();
-            break;
-        }
-
-        // Cam Info
-        auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());
-        infoMsg->header.frame_id = "cam_depth";
-        infoMsg->header.stamp = this->get_clock()->now();
-        infoPub_->publish(*infoMsg);
-
-
-
-        // 2D Image
-        xyzData_ = splitXYZ(frameData.data());
-        pubDepthImage(xyzData_.z.data());
-
-        // 3D Image
-        pubDepthPtc(xyzData_);
-    }
 
     if (!cap_->isConnected())
     {
         RCLCPP_ERROR(get_logger(), "Camera connection lost or unavailable");
         rclcpp::sleep_for(std::chrono::seconds(3));
         RCLCPP_INFO(get_logger(), "New camera connection attempt");
+    }
+    else
+    {
+        if(!cap_->getData(reinterpret_cast<uint8_t*>(frameData.data())))
+        {
+            // Cam Info
+            auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());
+            infoMsg->header.frame_id = "cam_depth";
+            infoMsg->header.stamp = this->get_clock()->now();
+            infoPub_->publish(*infoMsg);
+
+            // 2D Image
+            xyzData_ = splitXYZ(frameData.data());
+            pubDepthImage(xyzData_.z.data());
+
+            // 3D Image
+            pubDepthPtc(xyzData_);
+        }
     }
 }
 }

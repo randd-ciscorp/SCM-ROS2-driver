@@ -1,10 +1,11 @@
 #include "cis_scm/InternalDevice.hpp"
 
+#include "scmcap.h"
+
 namespace cis_scm{
 namespace internal{
 
-RGBInternalDevice::RGBInternalDevice(cis::CameraAR0234& camInputDev) {
-    camInputDevice_ = &camInputDev;
+RGBInternalDevice::RGBInternalDevice(cis::CameraAR0234* camInputDev) : camInputDevice_(camInputDev) {
 
     DevInfo devInfo {};
     devInfo.width = camInputDevice_->get_width();
@@ -12,47 +13,64 @@ RGBInternalDevice::RGBInternalDevice(cis::CameraAR0234& camInputDev) {
     devInfo_ = devInfo;
 }
 
-RGBInternalDevice::RGBInternalDevice(cis::CameraIMX715& camInputDev) {
-    camInputDevice_ = &camInputDev;
+RGBInternalDevice::RGBInternalDevice(cis::CameraIMX715* camInputDev) : camInputDevice_(camInputDev) {
 
     DevInfo devInfo {};
     devInfo.width = camInputDevice_->get_width();
     devInfo.height = camInputDevice_->get_height();
     devInfo_ = devInfo;
+}
+
+RGBInternalDevice::~RGBInternalDevice()
+{
+    delete camInputDevice_;
 }
 
 int RGBInternalDevice::connect()
 {
-    printf("Conneting...");
-    int r = camInputDevice_->connect();
-    r = camInputDevice_->stream_on();
-    if (!r)
+    camInputDevice_->open("/dev/video2");
+
+    if (!camInputDevice_->connect())
     {
-        isStreamOn_ = true;
+        if (!camInputDevice_->stream_on())
+        {
+            isStreamOn_ = true;
+            return 0;
+        }
+        else
+        {
+            perror("Could not start streaming");
+        }
     }
     else
     {
         perror("Connection failed");
     }
-
-    return r;
+    isStreamOn_ = false;
+    return -1;
 }
 
 void RGBInternalDevice::disconnect()
 {
+    camInputDevice_->stream_off();
     camInputDevice_->disconnect();
 }
 
 int RGBInternalDevice::getData(uint8_t* data)
 {
-    camEvent_.wait(isStreamOn_);
-    bool canRead = camEvent_.can_read(camInputDevice_->fd());
-    if (isStreamOn_ & canRead)
+    if (camInputDevice_->streaming())
     {
-        auto inputBuf = camInputDevice_->pop();
-        memcpy(data, inputBuf->data, devInfo_.width * devInfo_.height * 2);
-        camInputDevice_->push(inputBuf);
-        return 0;
+        if (cis::connection_handler(&camEvent_, camInputDevice_))
+        {
+            auto inputBuf = camInputDevice_->pop();
+            memcpy(data, inputBuf->data, devInfo_.width * devInfo_.height * 2);
+            camInputDevice_->push(inputBuf);
+            return 0;
+        }
+    }
+    else
+    {
+        isStreamOn_ = false;
     }
     return -1;
 }

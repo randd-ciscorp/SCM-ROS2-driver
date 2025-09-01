@@ -1,6 +1,5 @@
 #include "cis_scm/InternalDevice.hpp"
 
-#include "camera.h"
 #include "tof.h"
 
 namespace cis_scm {
@@ -9,8 +8,7 @@ namespace internal {
 
 RGBDInternalDevice::RGBDInternalDevice(const std::string &path, bool align) : tofIntDev(path), isAligned(align)
 {
-    cis::CameraAR0234 rgbCamInput = cis::CameraAR0234();
-    rgbIntDev = RGBInternalDevice(rgbCamInput);
+    rgbIntDev = RGBInternalDevice(new cis::CameraAR0234());
 }
 
 int RGBDInternalDevice::connect()
