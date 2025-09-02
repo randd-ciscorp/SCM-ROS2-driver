@@ -3,6 +3,7 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include "cis_scm/tof_driver.hpp"
+#include "cis_scm/Params.hpp"
 
 int main(int argc, char* argv[]){
     rclcpp::NodeOptions options;
@@ -13,6 +14,7 @@ int main(int argc, char* argv[]){
 #ifdef INTERNAL_DRIVER
     tof_node->initPointCloudTransport();
 #endif
+    auto param_handler = std::make_shared<cis_scm::ToFParamHandler>(tof_node);
     tof_node->start();
     rclcpp::spin(tof_node);
     rclcpp::shutdown();

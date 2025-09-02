@@ -22,19 +22,27 @@ namespace cis_scm
         inline constexpr std::string_view awb_index = "isp.awb.index";
         inline constexpr std::string_view dewarp_bypass = "isp.dewarp bypass";
         inline constexpr std::string_view gamma_correction = "isp.gamma correction";
-
     }
 
-class RGBParamHandler
+    namespace TofRosParams
+    {
+        inline constexpr std::string_view histo_thresh = "tof.history threshold";
+        inline constexpr std::string_view histo_length = "tof.history length";
+        inline constexpr std::string_view min_reflect = "tof.min reflectance";
+        inline constexpr std::string_view min_confi = "tof.min condidence";
+        inline constexpr std::string_view kill_flyind_delta = "tof.kill flying delta";
+        inline constexpr std::string_view integr_time = "tof.integration time";
+    }
+
+class ParamHandler
 {
 public:
-    RGBParamHandler() : rgb_node_(nullptr) {};
-    RGBParamHandler(std::shared_ptr<rclcpp::Node> rgb_node_);
+    virtual ~ParamHandler() = default;
 
-private:
+protected:
     rclcpp::Logger logger_ = rclcpp::get_logger("Camera Parameter Handler");
 
-    std::shared_ptr<rclcpp::Node> rgb_node_;
+    std::shared_ptr<rclcpp::Node> driver_node_;
 
 #ifndef INTERNAL_DRIVER
     std::unique_ptr<CameraCtrlExtern> cam_ctrl_;
@@ -50,9 +58,28 @@ private:
 
     void setParam(int param_id, rclcpp::Parameter param, rclcpp::ParameterType param_type);
 
-    rcl_interfaces::msg::SetParametersResult setRGBParamCB(const std::vector<rclcpp::Parameter> &parameters);
-
     rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr callback_handle;
+
+    virtual rcl_interfaces::msg::SetParametersResult setParamCB(const std::vector<rclcpp::Parameter> &parameters) = 0;
+};
+
+class RGBParamHandler : public ParamHandler
+{
+public:
+    RGBParamHandler(std::shared_ptr<rclcpp::Node> driver_node_);
+
+private:
+    rcl_interfaces::msg::SetParametersResult setParamCB(const std::vector<rclcpp::Parameter> &parameters) override;
+
+};
+
+class ToFParamHandler : public ParamHandler
+{
+public:
+    ToFParamHandler(std::shared_ptr<rclcpp::Node> driver_node_);
+
+private:
+    rcl_interfaces::msg::SetParametersResult setParamCB(const std::vector<rclcpp::Parameter> &parameters) override;
 
 };
 } // namespace cis_scm

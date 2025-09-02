@@ -12,42 +12,9 @@ using namespace std::chrono_literals;
 
 namespace cis_scm
 {
-RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node) : rgb_node_(node)
-{
-
-#ifndef INTERNAL_DRIVER
-    cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
-    if (!cam_ctrl_->isCtrlOk())
-    {
-        rclcpp::shutdown();
-    }
-
-#else
-    cam_ctrl_ = std::make_unique<CameraCtrlIntern>();
-#endif
-
-    using rcl_interfaces::msg::ParameterType;
-    declareParam(IspRosParams::ae_enable, true);
-    declareParam(IspRosParams::integration_time, 0.3333, setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.000276, 0.3333, 0.000001));
-    declareParam(IspRosParams::manual_gain, 1.0, setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 1.0, 16.0, 0.1));
-
-    declareParam(IspRosParams::awb_enable, true);
-    declareParam(IspRosParams::awb_index, 0, setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 4, 1));
-
-    declareParam(IspRosParams::dewarp_bypass, false);
-
-    declareParam(IspRosParams::gamma_correction, true);
-
-    callback_handle = rgb_node_->add_on_set_parameters_callback(
-        [this](const std::vector<rclcpp::Parameter>& param) -> rcl_interfaces::msg::SetParametersResult {
-            return this->setRGBParamCB(param);
-        }
-    );
-    RCLCPP_INFO(rgb_node_->get_logger(), "Parameter Handler initialized");
-}
 
 template <typename T>
-rcl_interfaces::msg::ParameterDescriptor RGBParamHandler::setParamDescriptor(uint8_t param_type, T min, T max, T step)
+rcl_interfaces::msg::ParameterDescriptor ParamHandler::setParamDescriptor(uint8_t param_type, T min, T max, T step)
 {
     rcl_interfaces::msg::ParameterDescriptor desc{};
     switch (param_type)
@@ -71,7 +38,7 @@ rcl_interfaces::msg::ParameterDescriptor RGBParamHandler::setParamDescriptor(uin
         break;
     }
     default:
-        RCLCPP_ERROR(rgb_node_->get_logger(), "Wrong parameter type");
+        RCLCPP_ERROR(driver_node_->get_logger(), "Wrong parameter type");
         break;
     }
 
@@ -79,24 +46,24 @@ rcl_interfaces::msg::ParameterDescriptor RGBParamHandler::setParamDescriptor(uin
 }
 
 template <typename T>
-void RGBParamHandler::declareParam(std::string_view param_name, T default_val, std::optional<rcl_interfaces::msg::ParameterDescriptor> desc)
+void ParamHandler::declareParam(std::string_view param_name, T default_val, std::optional<rcl_interfaces::msg::ParameterDescriptor> desc)
 {
     std::string param_str = std::string(param_name);
-    if (!rgb_node_->has_parameter(param_str))
+    if (!driver_node_->has_parameter(param_str))
     {
         if (desc)
         {
-            rgb_node_->declare_parameter(param_str, default_val, desc.value());
+            driver_node_->declare_parameter(param_str, default_val, desc.value());
         }
         else
         {
-            rgb_node_->declare_parameter(param_str, default_val);
+            driver_node_->declare_parameter(param_str, default_val);
         }
     }
 
 }
 
-void RGBParamHandler::setParam(int cam_param_id, rclcpp::Parameter param, rclcpp::ParameterType param_type)
+void ParamHandler::setParam(int cam_param_id, rclcpp::Parameter param, rclcpp::ParameterType param_type)
 {
     if (param.get_type() == param_type)
     {
@@ -120,7 +87,75 @@ void RGBParamHandler::setParam(int cam_param_id, rclcpp::Parameter param, rclcpp
     }
 }
 
-rcl_interfaces::msg::SetParametersResult RGBParamHandler::setRGBParamCB(const std::vector<rclcpp::Parameter> &parameters)
+RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node)
+{
+    driver_node_ = node;
+
+#ifndef INTERNAL_DRIVER
+    cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
+    if (!cam_ctrl_->isCtrlOk())
+    {
+        rclcpp::shutdown();
+    }
+
+#else
+    cam_ctrl_ = std::make_unique<CameraCtrlIntern>();
+#endif
+
+    using rcl_interfaces::msg::ParameterType;
+
+    declareParam(IspRosParams::ae_enable, true);
+    declareParam(IspRosParams::integration_time, 0.3333, setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.000276, 0.3333, 0.000001));
+    declareParam(IspRosParams::manual_gain, 1.0, setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 1.0, 16.0, 0.1));
+
+    declareParam(IspRosParams::awb_enable, true);
+    declareParam(IspRosParams::awb_index, 0, setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 4, 1));
+
+    declareParam(IspRosParams::dewarp_bypass, false);
+
+    declareParam(IspRosParams::gamma_correction, true);
+
+    callback_handle = driver_node_->add_on_set_parameters_callback(
+        [this](const std::vector<rclcpp::Parameter>& param) -> rcl_interfaces::msg::SetParametersResult {
+            return this->setParamCB(param);
+        }
+    );
+    RCLCPP_INFO(driver_node_->get_logger(), "Parameter Handler initialized");
+}
+
+ToFParamHandler::ToFParamHandler(std::shared_ptr<rclcpp::Node> node)
+{
+    driver_node_ = node;
+
+#ifndef INTERNAL_DRIVER
+    cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
+    if (!cam_ctrl_->isCtrlOk())
+    {
+        rclcpp::shutdown();
+    }
+
+#else
+    cam_ctrl_ = std::make_unique<CameraCtrlIntern>();
+#endif
+
+    using rcl_interfaces::msg::ParameterType;
+
+    declareParam(TofRosParams::histo_thresh, 17.5, setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 100.0, 17.5));
+    declareParam(TofRosParams::histo_length, 15, setParamDescriptor(ParameterType::PARAMETER_INTEGER, 1, 100, 15));
+    declareParam(TofRosParams::min_reflect, 7.5, setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 50.0, 7.5));
+    declareParam(TofRosParams::min_confi, 20.0, setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 512.0, 20.0));
+    declareParam(TofRosParams::kill_flyind_delta, 0.03, setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 1.0, 0.03));
+    declareParam(TofRosParams::integr_time, 1000, setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1000, 1000));
+
+    callback_handle = driver_node_->add_on_set_parameters_callback(
+        [this](const std::vector<rclcpp::Parameter>& param) -> rcl_interfaces::msg::SetParametersResult {
+            return this->setParamCB(param);
+        }
+    );
+    RCLCPP_INFO(driver_node_->get_logger(), "Parameter Handler initialized");
+}
+
+rcl_interfaces::msg::SetParametersResult RGBParamHandler::setParamCB(const std::vector<rclcpp::Parameter> &parameters)
 {
     rcl_interfaces::msg::SetParametersResult res;
     res.successful = true;
@@ -167,6 +202,42 @@ rcl_interfaces::msg::SetParametersResult RGBParamHandler::setRGBParamCB(const st
         {
             setParam(rgb_set_param::RGB_SET_GAMMA, param, rclcpp::ParameterType::PARAMETER_BOOL);
         }
+    }
+    return res;
+}
+
+rcl_interfaces::msg::SetParametersResult ToFParamHandler::setParamCB(const std::vector<rclcpp::Parameter> &parameters)
+{
+    rcl_interfaces::msg::SetParametersResult res;
+    res.successful = true;
+
+    for (const auto &param : parameters)
+    {
+        if (param.get_name() == TofRosParams::histo_thresh)
+        {
+            setParam(tof_set_param::TOF_SET_HISTORY_THRESHOLD, param, rclcpp::ParameterType::PARAMETER_DOUBLE);
+        }
+        else if (param.get_name() == TofRosParams::histo_length)
+        {
+            setParam(tof_set_param::TOF_SET_HISTORY_LENGTH, param, rclcpp::ParameterType::PARAMETER_DOUBLE);
+        }
+        else if (param.get_name() == TofRosParams::min_reflect)
+        {
+            setParam(tof_set_param::TOF_SET_MIN_REFLECTANCE, param, rclcpp::ParameterType::PARAMETER_DOUBLE);
+        }
+        else if (param.get_name() == TofRosParams::min_confi)
+        {
+            setParam(tof_set_param::TOF_SET_MIN_CONFIDENCE, param, rclcpp::ParameterType::PARAMETER_DOUBLE);
+        }
+        else if (param.get_name() == TofRosParams::kill_flyind_delta)
+        {
+            setParam(tof_set_param::TOF_SET_KILL_FLYING_DELTA, param, rclcpp::ParameterType::PARAMETER_DOUBLE);
+        }
+        else if (param.get_name() == TofRosParams::integr_time)
+        {
+            setParam(tof_set_param::TOF_SET_INTEGRATION_TIME, param, rclcpp::ParameterType::PARAMETER_INTEGER);
+        }
+
     }
     return res;
 }
