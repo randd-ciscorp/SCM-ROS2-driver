@@ -5,17 +5,14 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <camera_info_manager/camera_info_manager.hpp>
-#include <image_transport/image_transport.hpp>
-
 #include <opencv2/opencv.hpp>
 
 #ifndef INTERNAL_DRIVER
     #include "cis_scm/ExternalDevice.hpp"
 #else
+    #include <image_transport/image_transport.hpp>
     #include "cis_scm/InternalDevice.hpp"
 #endif
-#include "cis_scm/Params.hpp"
-#include "cis_scm/Controls.hpp"
 
 namespace cis_scm
 {
@@ -25,15 +22,16 @@ class RGBNode : public rclcpp::Node
 public:
     RGBNode(const std::string node_name, const rclcpp::NodeOptions &get_node_options);
 
+#ifdef INTERNAL_DRIVER
     void initImageTransport();
+#endif
+
     void start();
-    rcl_interfaces::msg::SetParametersResult parameterCB(const std::vector<rclcpp::Parameter> &parameters);
 private:
     int width_;
     int height_;
 
     float inte_time_;
-    OnSetParametersCallbackHandle::SharedPtr callback_handle;
 
     cv::Mat rgbImg_;
 
@@ -41,17 +39,17 @@ private:
 
     rclcpp::TimerBase::SharedPtr timer_;
 
-#ifndef INTERNAL_DRIVER
-    std::unique_ptr<ExternalDevice> cap_;
-#else
+#ifdef INTERNAL_DRIVER
     std::unique_ptr<internal::RGBInternalDevice> cap_;
+    std::shared_ptr<image_transport::ImageTransport> it_;
+    image_transport::Publisher imgPub_;
+#else
+    std::unique_ptr<ExternalDevice> cap_;
+    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> imgPub_;
 #endif
 
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoPub_;
     std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
-
-    std::shared_ptr<image_transport::ImageTransport> it_;
-    image_transport::Publisher imgPub_;
 
     std::string topicPrefix_ = "camera/rgb";
     std::string cameraBaseFrame_ = "camera_base";

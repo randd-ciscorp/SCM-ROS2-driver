@@ -8,13 +8,13 @@
 #include <rclcpp/callback_group.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
-#include <point_cloud_transport/point_cloud_transport.hpp>
-#include <rmw/types.h>
 #include <opencv2/opencv.hpp>
 
 #ifndef INTERNAL_DRIVER
 #include "cis_scm/Device.h"
 #else
+#include <point_cloud_transport/point_cloud_transport.hpp>
+#include <rmw/types.h>
 #include "cis_scm/InternalDevice.hpp"
 #endif
 
@@ -31,11 +31,15 @@ ToFCVNode::ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & no
     depthImgPub_ = create_publisher<sensor_msgs::msg::Image>(topicPrefix_ + "/img_depth", 10);
     infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicPrefix_ + "/cam_info", 10);
 
+#ifndef INTERNAL_DRIVER
+    depthPCLPub_ = create_publisher<sensor_msgs::msg::PointCloud2>(topicPrefix_ + "/pcl_depth", 10);
+#endif
+
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm");
     importParams();
-
 }
 
+#ifdef INTERNAL_DRIVER
 void ToFCVNode::initPointCloudTransport()
 {
     // Humble ver. of point_cloud_transport does not use rclcpp QoS yet
@@ -49,6 +53,7 @@ void ToFCVNode::initPointCloudTransport()
     depthPCLPub_ = point_cloud_transport::create_publisher(shared_from_this(), topicPrefix_ + "/pcl_depth", pc_qos);
 
 }
+#endif
 
 int ToFCVNode::initCap()
 {
@@ -212,8 +217,11 @@ void ToFCVNode::pubDepthPtc(XYZData &data){
                 *iter_z = z;
             }
         }
-
+#ifdef INTERNAL_DRIVER
         depthPCLPub_.publish(ptcMsg_);
+#else
+        depthPCLPub_->publish(ptcMsg_);
+#endif
 }
 
 void ToFCVNode::depthCallback(){

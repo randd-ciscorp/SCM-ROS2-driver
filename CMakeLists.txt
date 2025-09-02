@@ -4,6 +4,9 @@ project(cis_scm)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+add_compile_options(-Wno-stringop-overflow -Wno-array-bounds)
+
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -15,13 +18,14 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(camera_info_manager REQUIRED)
 find_package(tf2 REQUIRED)
-find_package(image_transport REQUIRED)
-find_package(point_cloud_transport REQUIRED)
 
 include_directories(include)
 
 if(INTERNAL_DRIVER)
     add_definitions(-DINTERNAL_DRIVER)
+
+    find_package(image_transport REQUIRED)
+    find_package(point_cloud_transport REQUIRED)
 
     add_library(internal_device
         src/Device.cpp

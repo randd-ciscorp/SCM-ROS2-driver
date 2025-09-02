@@ -185,7 +185,11 @@ void RGBDNode::pubRGBDPtc(XYZRGBData& xyzrgbData)
             iter_rgb[2] = xyzrgbData.rgb[i][2];
         }
     }
+#ifdef INTERNAL_DRIVER
     depthPCLPub_.publish(ptcMsg_);
+#else
+    depthPCLPub_->publish(ptcMsg_);
+#endif
 }
 
 void RGBDNode::RGBDCallback()

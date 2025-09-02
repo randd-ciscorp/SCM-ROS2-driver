@@ -3,16 +3,15 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
-#include <image_transport/image_transport.hpp>
 #include <opencv2/opencv.hpp>
 
 #ifndef INTERNAL_DRIVER
 #include "cis_scm/ExternalDevice.hpp"
 #else
+#include <image_transport/image_transport.hpp>
 #include "cis_scm/InternalDevice.hpp"
 #endif
 
-#include "scmcap.h"
 
 using namespace std::literals::chrono_literals;
 namespace cis_scm
@@ -24,6 +23,9 @@ RGBNode::RGBNode(const std::string node_name, const rclcpp::NodeOptions & node_o
 
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm");
 
+#ifndef INTERNAL_DRIVER
+    imgPub_ = create_publisher<sensor_msgs::msg::Image>(topicPrefix_ + "/img_rgb", 10);
+#endif
     importParams();
 }
 
@@ -68,21 +70,22 @@ void RGBNode::importParams()
     }
 }
 
+#ifdef INTERNAL_DRIVER
 void RGBNode::initImageTransport()
 {
     it_ = std::make_shared<image_transport::ImageTransport>(shared_from_this());
     imgPub_ = it_->advertise(topicPrefix_ + "/image_raw", 10);
 }
+#endif
 
 int RGBNode::initCap()
 {
-#ifndef INTERNAL_DRIVER
-    cap_ = std::make_unique<ExternalDevice>();
-
-    if(!cap_->connect(width_, height_))
-#else
+#ifdef INTERNAL_DRIVER
     cap_ = std::make_unique<internal::RGBInternalDevice>(new cis::CameraAR0234());
     if(!cap_->connect())
+#else
+    cap_ = std::make_unique<ExternalDevice>();
+    if(!cap_->connect(width_, height_))
 #endif
     {
         RCLCPP_INFO(get_logger(), "Camera connected");
@@ -143,7 +146,11 @@ void RGBNode::pubImage(uint8_t *data)
     imgMsg_.step =  width_ * 3;
     imgMsg_.is_bigendian = true;
     imgMsg_.data.assign(data, data + imgMsg_.step * imgMsg_.height);
+#ifdef INTERNAL_DRIVER
     imgPub_.publish(std::move(imgMsg_));
+#else
+    imgPub_->publish(std::move(imgMsg_));
+#endif
 }
 
 void RGBNode::imgCallback()
