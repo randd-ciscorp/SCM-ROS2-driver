@@ -68,10 +68,10 @@ void RGBNode::importParams()
     }
 }
 
-void RGBNode::initParamHandler()
+void RGBNode::initImageTransport()
 {
     it_ = std::make_shared<image_transport::ImageTransport>(shared_from_this());
-    imgPub_ = it_->advertise(topicPrefix_ + "/image_raw", 1);
+    imgPub_ = it_->advertise(topicPrefix_ + "/image_raw", 10);
 }
 
 int RGBNode::initCap()

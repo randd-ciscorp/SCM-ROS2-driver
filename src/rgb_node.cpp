@@ -13,8 +13,8 @@ int main(int argc, char* argv[])
 
     rclcpp::init(argc, argv);
     std::shared_ptr<cis_scm::RGBNode> rgb_node = std::make_shared<cis_scm::RGBNode>("rgb_node", options);
+    rgb_node->initImageTransport();
     auto param_handler = std::make_shared<cis_scm::RGBParamHandler>(rgb_node);
-    rgb_node->initParamHandler();
     rgb_node->start();
     rclcpp::spin(rgb_node);
     rclcpp::shutdown();
