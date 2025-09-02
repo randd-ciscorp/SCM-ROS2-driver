@@ -25,7 +25,7 @@ class RGBNode : public rclcpp::Node
 public:
     RGBNode(const std::string node_name, const rclcpp::NodeOptions &get_node_options);
 
-    void initParamHandler();
+    void initImageTransport();
     void start();
     rcl_interfaces::msg::SetParametersResult parameterCB(const std::vector<rclcpp::Parameter> &parameters);
 private:
