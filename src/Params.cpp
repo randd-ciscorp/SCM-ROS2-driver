@@ -219,7 +219,7 @@ rcl_interfaces::msg::SetParametersResult ToFParamHandler::setParamCB(const std::
         }
         else if (param.get_name() == TofRosParams::histo_length)
         {
-            setParam(tof_set_param::TOF_SET_HISTORY_LENGTH, param, rclcpp::ParameterType::PARAMETER_DOUBLE);
+            setParam(tof_set_param::TOF_SET_HISTORY_LENGTH, param, rclcpp::ParameterType::PARAMETER_INTEGER);
         }
         else if (param.get_name() == TofRosParams::min_reflect)
         {
