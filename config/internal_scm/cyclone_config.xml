@@ -2,8 +2,8 @@
 <CycloneDDS xmlns="https://cdds.io/config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <Domain id="any">
         <General>
-	    <MaxMessageSize>1472B</MaxMessageSize> 
-	    <FragmentSize>1472B</FragmentSize>
+	    <MaxMessageSize>5000B</MaxMessageSize> 
+	    <FragmentSize>5000B</FragmentSize>
 	    <Transport>udp</Transport>
 	    <AllowMulticast>true</AllowMulticast>
         </General>

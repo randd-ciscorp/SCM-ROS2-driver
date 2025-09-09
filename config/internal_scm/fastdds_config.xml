@@ -5,7 +5,7 @@
             <transport_descriptor>
                 <transport_id>TransportId1</transport_id>
                 <type>UDPv4</type>
-                <maxMessageSize>1400</maxMessageSize>
+                <maxMessageSize>5000</maxMessageSize>
             </transport_descriptor>
         </transport_descriptors>
 
