@@ -80,6 +80,11 @@ void ParamHandler::setParam(int cam_param_id, rclcpp::Parameter param, rclcpp::P
         {
             cam_ctrl_->setControlInt(cam_param_id, param.as_bool());
         }
+        if (param.get_type() == rclcpp::PARAMETER_DOUBLE_ARRAY)
+        {
+            std::vector<float> f_vals(param.as_double_array().begin(), param.as_double_array().end());
+            cam_ctrl_->setControlFloatArray(cam_param_id, f_vals.data(), param.as_double_array().size());
+        }
     }
     else
     {
@@ -111,9 +116,38 @@ RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node)
     declareParam(IspRosParams::awb_enable, true);
     declareParam(IspRosParams::awb_index, 0, setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 4, 1));
 
+    declareParam(IspRosParams::wb_cc_matrix, std::vector<double>{0.,0.,0.,0.,0.,0.,0.,0.,0.});
+    declareParam(IspRosParams::wb_offset_r, 0, setParamDescriptor(ParameterType::PARAMETER_INTEGER, -2048, 2047, 1));
+    declareParam(IspRosParams::wb_offset_g, 0, setParamDescriptor(ParameterType::PARAMETER_INTEGER, -2048, 2047, 1));
+    declareParam(IspRosParams::wb_offset_b, 0, setParamDescriptor(ParameterType::PARAMETER_INTEGER, -2048, 2047, 1));
+    declareParam(IspRosParams::wb_gain_r, 1.0, setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 1.0, 3.999, 0.01));
+    declareParam(IspRosParams::wb_gain_gr, 1.0, setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 1.0, 3.999, 0.01));
+    declareParam(IspRosParams::wb_gain_gb, 1.0, setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 1.0, 3.999, 0.01));
+    declareParam(IspRosParams::wb_gain_b, 1.0, setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 1.0, 3.999, 0.01));
+
     declareParam(IspRosParams::dewarp_bypass, false);
 
     declareParam(IspRosParams::gamma_correction, true);
+
+    declareParam(IspRosParams::denoising_prefilter, true);
+
+    declareParam(IspRosParams::bls_sub_r, 40, setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1023, 1));
+    declareParam(IspRosParams::bls_sub_gr, 40, setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1023, 1));
+    declareParam(IspRosParams::bls_sub_gb, 40, setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1023, 1));
+    declareParam(IspRosParams::bls_sub_b, 40, setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1023, 1));
+
+    declareParam(IspRosParams::lsc_enable, false);
+    declareParam(IspRosParams::hflip, false);
+    declareParam(IspRosParams::vflip, false);
+
+    declareParam(IspRosParams::cproc_enable, false);
+    declareParam(IspRosParams::cproc_color_space, 3, setParamDescriptor(ParameterType::PARAMETER_INTEGER, 1, 4, 1));
+    declareParam(IspRosParams::cproc_brightness, -30, setParamDescriptor(ParameterType::PARAMETER_INTEGER, -127, 127, 1));
+    declareParam(IspRosParams::cproc_brightness, 0.804688, setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 1.99, 0.000001));
+    declareParam(IspRosParams::cproc_brightness, 0.328125, setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 1.99, 0.000001));
+    declareParam(IspRosParams::cproc_brightness, -17, setParamDescriptor(ParameterType::PARAMETER_INTEGER, -90, 89, 1));
+
+    declareParam(IspRosParams::dpcc_enable, true);
 
     callback_handle = driver_node_->add_on_set_parameters_callback(
         [this](const std::vector<rclcpp::Parameter>& param) -> rcl_interfaces::msg::SetParametersResult {
@@ -202,6 +236,104 @@ rcl_interfaces::msg::SetParametersResult RGBParamHandler::setParamCB(const std::
         {
             setParam(rgb_set_param::RGB_SET_GAMMA, param, rclcpp::ParameterType::PARAMETER_BOOL);
         }
+        else if (param.get_name() == IspRosParams::gamma_correction)
+        {
+            setParam(rgb_set_param::RGB_SET_GAMMA, param, rclcpp::ParameterType::PARAMETER_BOOL);
+        }
+        // TODO: add WB CCMatrix
+        else if (param.get_name() == IspRosParams::wb_cc_matrix)
+        {
+            setParam(rgb_set_param::RGB_SET_WHITE_BALANCE_CC_MATRIX, param, rclcpp::ParameterType::PARAMETER_DOUBLE_ARRAY);
+        }
+        else if (param.get_name() == IspRosParams::wb_offset_r)
+        {
+            setParam(rgb_set_param::RGB_SET_WHITE_BALANCE_OFFSET_R, param, rclcpp::ParameterType::PARAMETER_INTEGER);
+        }
+        else if (param.get_name() == IspRosParams::wb_offset_g)
+        {
+            setParam(rgb_set_param::RGB_SET_WHITE_BALANCE_OFFSET_G, param, rclcpp::ParameterType::PARAMETER_INTEGER);
+        }
+        else if (param.get_name() == IspRosParams::wb_offset_b)
+        {
+            setParam(rgb_set_param::RGB_SET_WHITE_BALANCE_OFFSET_B, param, rclcpp::ParameterType::PARAMETER_INTEGER);
+        }
+        else if (param.get_name() == IspRosParams::wb_gain_r)
+        {
+            setParam(rgb_set_param::RGB_SET_WHITE_BALANCE_GAIN_R, param, rclcpp::ParameterType::PARAMETER_DOUBLE);
+        }
+        else if (param.get_name() == IspRosParams::wb_gain_gr)
+        {
+            setParam(rgb_set_param::RGB_SET_WHITE_BALANCE_GAIN_GR, param, rclcpp::ParameterType::PARAMETER_DOUBLE);
+        }
+        else if (param.get_name() == IspRosParams::wb_gain_gb)
+        {
+            setParam(rgb_set_param::RGB_SET_WHITE_BALANCE_GAIN_GB, param, rclcpp::ParameterType::PARAMETER_DOUBLE);
+        }
+        else if (param.get_name() == IspRosParams::wb_gain_b)
+        {
+            setParam(rgb_set_param::RGB_SET_WHITE_BALANCE_GAIN_B, param, rclcpp::ParameterType::PARAMETER_DOUBLE);
+        }
+        else if (param.get_name() == IspRosParams::denoising_prefilter)
+        {
+            setParam(rgb_set_param::RGB_SET_DENOISING_PREFILTER, param, rclcpp::ParameterType::PARAMETER_BOOL);
+        }
+        else if (param.get_name() == IspRosParams::bls_sub_r)
+        {
+            setParam(rgb_set_param::RGB_SET_BLACK_LEVEL_SUBTRUCTION_R, param, rclcpp::ParameterType::PARAMETER_INTEGER);
+        }
+        else if (param.get_name() == IspRosParams::bls_sub_gr)
+        {
+            setParam(rgb_set_param::RGB_SET_BLACK_LEVEL_SUBTRUCTION_GR, param, rclcpp::ParameterType::PARAMETER_INTEGER);
+        }
+        else if (param.get_name() == IspRosParams::bls_sub_gb)
+        {
+            setParam(rgb_set_param::RGB_SET_BLACK_LEVEL_SUBTRUCTION_GB, param, rclcpp::ParameterType::PARAMETER_INTEGER);
+        }
+        else if (param.get_name() == IspRosParams::bls_sub_b)
+        {
+            setParam(rgb_set_param::RGB_SET_BLACK_LEVEL_SUBTRUCTION_B, param, rclcpp::ParameterType::PARAMETER_INTEGER);
+        }
+        else if (param.get_name() == IspRosParams::lsc_enable)
+        {
+            setParam(rgb_set_param::RGB_SET_LENS_SHADING_CORRECTION, param, rclcpp::ParameterType::PARAMETER_BOOL);
+        }
+        else if (param.get_name() == IspRosParams::hflip)
+        {
+            setParam(rgb_set_param::RGB_SET_HFLIP, param, rclcpp::ParameterType::PARAMETER_BOOL);
+        }
+        else if (param.get_name() == IspRosParams::vflip)
+        {
+            setParam(rgb_set_param::RGB_SET_VFLIP, param, rclcpp::ParameterType::PARAMETER_BOOL);
+        }
+        else if (param.get_name() == IspRosParams::cproc_enable)
+        {
+            setParam(rgb_set_param::RGB_SET_COLOR_PROCESSING, param, rclcpp::ParameterType::PARAMETER_BOOL);
+        }
+        else if (param.get_name() == IspRosParams::cproc_color_space)
+        {
+            setParam(rgb_set_param::RGB_SET_COLOR_SPACE, param, rclcpp::ParameterType::PARAMETER_INTEGER);
+        }
+        else if (param.get_name() == IspRosParams::cproc_brightness)
+        {
+            setParam(rgb_set_param::RGB_SET_BRIGHTNESS, param, rclcpp::ParameterType::PARAMETER_INTEGER);
+        }
+        else if (param.get_name() == IspRosParams::cproc_contrast)
+        {
+            setParam(rgb_set_param::RGB_SET_CONTRAST, param, rclcpp::ParameterType::PARAMETER_DOUBLE);
+        }
+        else if (param.get_name() == IspRosParams::cproc_saturation)
+        {
+            setParam(rgb_set_param::RGB_SET_SATURATION, param, rclcpp::ParameterType::PARAMETER_DOUBLE);
+        }
+        else if (param.get_name() == IspRosParams::cproc_hue)
+        {
+            setParam(rgb_set_param::RGB_SET_HUE, param, rclcpp::ParameterType::PARAMETER_INTEGER);
+        }
+        else if (param.get_name() == IspRosParams::dpcc_enable)
+        {
+            setParam(rgb_set_param::RGB_SET_DEFECT_PIXEL_CLUSTER_CORRECTION, param, rclcpp::ParameterType::PARAMETER_BOOL);
+        }
+
     }
     return res;
 }

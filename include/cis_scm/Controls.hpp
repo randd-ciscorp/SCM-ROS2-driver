@@ -161,6 +161,8 @@ public:
     virtual void setControlBool(int ctrl, bool val) = 0;
     virtual bool getControlBool(int ctrl) = 0;
 
+    virtual void setControlFloatArray(int ctrl, float* vals, int arr_len) = 0;
+    virtual std::vector<float> getControlFloatArray(int ctrl, int arr_len) = 0;
     virtual ~CameraCtrl() = default;
 };
 
@@ -178,6 +180,9 @@ public:
 
     void setControlBool(int ctrl, bool val) override;
     bool getControlBool(int ctrl) override;
+
+    void setControlFloatArray(int ctrl, float* vals, int arr_len) override;
+    std::vector<float> getControlFloatArray(int ctrl, int arr_len) override;
 
     bool isCtrlOk() {return ctrl_ok;};
 
@@ -202,6 +207,9 @@ public:
 
     void setControlBool(int ctrl, bool val) override;
     bool getControlBool(int ctrl) override;
+
+    void setControlFloatArray(int ctrl, float* vals, int arr_len) override;
+    std::vector<float> getControlFloatArray(int ctrl, int arr_len) override;
 };
 
 

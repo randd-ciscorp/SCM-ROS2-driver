@@ -94,6 +94,25 @@ void CameraCtrlExtern::setControlBool(int ctrl, bool val)
     tcdrain(fd_);
 }
 
+void CameraCtrlExtern::setControlFloatArray(int ctrl, float* vals, int arr_len)
+{
+    std::stringstream ss;
+    ss << "SU " << ctrl;
+    for (int i = 0; i < arr_len; i++)
+    {
+        ss << " " << vals[i];
+    }
+    ss << "\r\n";
+
+    std::string cmd = ss.str();
+    std::cout << cmd << std::endl;
+    if(write(fd_, cmd.c_str(), cmd.length()) <= 0)
+    {
+       std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
+    }
+    tcdrain(fd_);
+}
+
 int CameraCtrlExtern::getControlInt(int ctrl)
 {
     // ctrl value query
@@ -148,6 +167,25 @@ bool CameraCtrlExtern::getControlBool(int ctrl)
     return ret_val;
 }
 
+std::vector<float> CameraCtrlExtern::getControlFloatArray(int ctrl, int arr_len)
+{
+    // ctrl value query
+    std::stringstream ss;
+    ss << "GU " << ctrl;
+    std::string cmd = ss.str();
+
+    // get ctrl value
+    std::vector<float> ret_vals(arr_len);
+    int nb_spaces = arr_len - 1;
+    char* r_buf = new char[sizeof(float)*arr_len+nb_spaces];
+    while(read(fd_, r_buf, sizeof(float)*arr_len+nb_spaces) <= (ssize_t)sizeof(float)*arr_len+nb_spaces)
+    {
+        write(fd_, cmd.c_str(), cmd.length());
+    }
+    tcdrain(fd_);
+    delete[] r_buf;
+    return ret_vals;
+}
 void CameraCtrlIntern::setControlInt(int ctrl, int val)
 {
     std::cout << "SU " << ctrl << " " << val << std::endl;
@@ -161,6 +199,11 @@ void CameraCtrlIntern::setControlFloat(int ctrl, float val)
 void CameraCtrlIntern::setControlBool(int ctrl, bool val)
 {
     std::cout << "SU " << ctrl << " " << val << std::endl;
+}
+
+void CameraCtrlIntern::setControlFloatArray(int ctrl, float* vals, int arr_len)
+{
+    std::cout << "SU " << ctrl << " " << vals[0] << std::endl;
 }
 
 int CameraCtrlIntern::getControlInt(int ctrl)
@@ -182,6 +225,13 @@ bool CameraCtrlIntern::getControlBool(int ctrl)
     bool ret_val = 0.;
     std::cout << "GU " << ctrl << std::endl;
     return ret_val;
+}
+
+std::vector<float> CameraCtrlIntern::getControlFloatArray(int ctrl, int arr_len)
+{
+    std::vector<float> ret_vals(arr_len);
+    std::cout << "GU " << ctrl << std::endl;
+    return ret_vals;
 }
 } // namespace cis_scm
 
