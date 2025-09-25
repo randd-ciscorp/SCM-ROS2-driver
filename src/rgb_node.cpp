@@ -16,7 +16,12 @@ int main(int argc, char* argv[])
 #ifdef INTERNAL_DRIVER
     rgb_node->initImageTransport();
 #endif
-    auto param_handler = std::make_shared<cis_scm::RGBParamHandler>(rgb_node);
+    try {
+        auto param_handler = std::make_shared<cis_scm::RGBParamHandler>(rgb_node);
+    }
+    catch (const std::exception& e) {
+        RCLCPP_ERROR(rgb_node->get_logger(), "Camera control parameters are not active.");
+    }
     rgb_node->start();
     rclcpp::spin(rgb_node);
     rclcpp::shutdown();

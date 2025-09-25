@@ -98,11 +98,6 @@ RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node)
 
 #ifndef INTERNAL_DRIVER
     cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
-    if (!cam_ctrl_->isCtrlOk())
-    {
-        rclcpp::shutdown();
-    }
-
 #else
     cam_ctrl_ = std::make_unique<CameraCtrlIntern>();
 #endif
@@ -163,11 +158,6 @@ ToFParamHandler::ToFParamHandler(std::shared_ptr<rclcpp::Node> node)
 
 #ifndef INTERNAL_DRIVER
     cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
-    if (!cam_ctrl_->isCtrlOk())
-    {
-        rclcpp::shutdown();
-    }
-
 #else
     cam_ctrl_ = std::make_unique<CameraCtrlIntern>();
 #endif

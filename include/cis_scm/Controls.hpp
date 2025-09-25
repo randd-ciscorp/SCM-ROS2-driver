@@ -184,8 +184,6 @@ public:
     void setControlFloatArray(int ctrl, float* vals, int arr_len) override;
     std::vector<float> getControlFloatArray(int ctrl, int arr_len) override;
 
-    bool isCtrlOk() {return ctrl_ok;};
-
 private:
     // CIS Protocol device
     int fd_;

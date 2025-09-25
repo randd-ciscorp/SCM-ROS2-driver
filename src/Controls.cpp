@@ -13,7 +13,7 @@ CameraCtrlExtern::CameraCtrlExtern()
     if (fd_ < 0)
     {
         perror("Error opening CIS Protocol device");
-        ctrl_ok = false;
+        throw std::runtime_error("CameraCtrlExtern init failed");
     }
 
     configSerial();
