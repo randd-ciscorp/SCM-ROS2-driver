@@ -5,10 +5,12 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
+    shrd_pkg_prefix = get_package_share_directory("cis_scm")
+
     return LaunchDescription([
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
-                get_package_share_directory('cis_scm') + '/launch' + '/rgbd_launch.py'
+                shrd_pkg_prefix + '/launch' + '/rgbd_launch.py'
             )
         ),
 
@@ -17,7 +19,7 @@ def generate_launch_description():
             executable='rviz2',
             name='rviz2',
             output='screen',
-            #arguments=['-d', rviz_config]
+            arguments=["-d", shrd_pkg_prefix + "/config/rviz/scm_rgbd.rviz"],
         ),
 
         Node(
