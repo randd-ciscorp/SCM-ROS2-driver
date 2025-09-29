@@ -1,23 +1,25 @@
+// Copyright 2025 CIS Corporation
 #include <memory>
 
 #include <rclcpp/rclcpp.hpp>
 
-#include "cis_scm/tof_driver.hpp"
 #include "cis_scm/Params.hpp"
+#include "cis_scm/tof_driver.hpp"
 
-int main(int argc, char* argv[]){
+int main(int argc, char * argv[])
+{
     rclcpp::NodeOptions options;
     options.use_intra_process_comms(true);
 
     rclcpp::init(argc, argv);
-    std::shared_ptr<cis_scm::ToFCVNode> tof_node = std::make_shared<cis_scm::ToFCVNode>("tof_node", options);
+    std::shared_ptr<cis_scm::ToFCVNode> tof_node =
+        std::make_shared<cis_scm::ToFCVNode>("tof_node", options);
 #ifdef INTERNAL_DRIVER
     tof_node->initPointCloudTransport();
 #endif
     try {
         auto param_handler = std::make_shared<cis_scm::ToFParamHandler>(tof_node);
-    }
-    catch (const std::exception& e) {
+    } catch (const std::exception & e) {
         RCLCPP_ERROR(tof_node->get_logger(), "Camera control parameters are not active.");
     }
     tof_node->start();

@@ -1,17 +1,22 @@
-#ifndef RGB_DRIVER_HPP
-#define RGB_DRIVER_HPP
+// Copyright 2025 CIS Corporation
+#ifndef CIS_SCM__RGB_DRIVER_HPP_
+#define CIS_SCM__RGB_DRIVER_HPP_
 
-#include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/image.hpp>
-#include <sensor_msgs/msg/camera_info.hpp>
-#include <camera_info_manager/camera_info_manager.hpp>
+#include <memory>
+#include <string>
+
 #include <opencv2/opencv.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
+#include <sensor_msgs/msg/image.hpp>
+#include <camera_info_manager/camera_info_manager.hpp>
 
 #ifndef INTERNAL_DRIVER
-    #include "cis_scm/ExternalDevice.hpp"
+#include "cis_scm/ExternalDevice.hpp"
 #else
-    #include <image_transport/image_transport.hpp>
-    #include "cis_scm/InternalDevice.hpp"
+#include <image_transport/image_transport.hpp>
+
+#include "cis_scm/InternalDevice.hpp"
 #endif
 
 namespace cis_scm
@@ -19,15 +24,16 @@ namespace cis_scm
 
 class RGBNode : public rclcpp::Node
 {
-public:
-    RGBNode(const std::string node_name, const rclcpp::NodeOptions &get_node_options);
+  public:
+    RGBNode(const std::string node_name, const rclcpp::NodeOptions & get_node_options);
 
 #ifdef INTERNAL_DRIVER
     void initImageTransport();
 #endif
 
     void start();
-private:
+
+  private:
     int width_;
     int height_;
 
@@ -63,6 +69,6 @@ private:
     void imgCallback();
 };
 
-} // namespace cis_scm
+}  // namespace cis_scm
 
-#endif
+#endif  // CIS_SCM__RGB_DRIVER_HPP_

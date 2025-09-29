@@ -1,19 +1,21 @@
+// Copyright 2025 CIS Corporation
 #include "cis_scm/Device.h"
 
+#include <errno.h>
 #include <fcntl.h>
-#include <unistd.h>
+#include <linux/videodev2.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <linux/videodev2.h>
+#include <unistd.h>
 
-#include <errno.h>
-#include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <string>
 
-namespace cis_scm {
+namespace cis_scm
+{
 
 Device::Device()
 {
@@ -23,12 +25,7 @@ Device::Device()
     isStreamOn_ = false;
 }
 
-Device::~Device()
-{
-}
+Device::~Device() {}
 
-bool Device::isConnected() const
-{
-    return isStreamOn_;
-}
-}
+bool Device::isConnected() const { return isStreamOn_; }
+}  // namespace cis_scm

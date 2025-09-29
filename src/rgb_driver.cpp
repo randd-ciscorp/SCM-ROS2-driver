@@ -1,23 +1,25 @@
+// Copyright 2025 CIS Corporation
 #include "cis_scm/rgb_driver.hpp"
 
+#include <opencv2/opencv.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
-#include <opencv2/opencv.hpp>
 
 #ifndef INTERNAL_DRIVER
 #include "cis_scm/ExternalDevice.hpp"
 #else
 #include <image_transport/image_transport.hpp>
+
 #include "cis_scm/InternalDevice.hpp"
 #endif
-
 
 using namespace std::literals::chrono_literals;
 namespace cis_scm
 {
 
-RGBNode::RGBNode(const std::string node_name, const rclcpp::NodeOptions & node_options) : Node(node_name, node_options)
+RGBNode::RGBNode(const std::string node_name, const rclcpp::NodeOptions & node_options)
+: Node(node_name, node_options)
 {
     infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicPrefix_ + "/cam_info", 10);
 
@@ -32,41 +34,36 @@ RGBNode::RGBNode(const std::string node_name, const rclcpp::NodeOptions & node_o
 void RGBNode::importParams()
 {
     // Cam params
-    if(!this->has_parameter("camera_params")){
+    if (!this->has_parameter("camera_params")) {
         this->declare_parameter("camera_params", "package://cis_scm/cam_param.yaml");
     }
     std::string param_file_path = this->get_parameter("camera_params").as_string();
 
-    if (param_file_path != "")
-    {
+    if (param_file_path != "") {
         RCLCPP_INFO(get_logger(), "Load parameters file: %s", param_file_path.c_str());
-        if (cinfo_->validateURL(param_file_path))
-        {
+        if (cinfo_->validateURL(param_file_path)) {
             cinfo_->loadCameraInfo(param_file_path);
-        }
-        else
-        {
-            RCLCPP_ERROR(get_logger(), "Could not find parameter file at: %s", param_file_path.c_str());
+        } else {
+            RCLCPP_ERROR(
+                get_logger(), "Could not find parameter file at: %s", param_file_path.c_str());
             rclcpp::shutdown();
         }
     }
 
     // SCM-2M1 or SCM-8M1
-    if(!this->has_parameter("rgb_device")){
+    if (!this->has_parameter("rgb_device")) {
         this->declare_parameter("rgb_device", "2m1");
     }
-    if(this->get_parameter("rgb_device").as_string() == "2m1"){
+    if (this->get_parameter("rgb_device").as_string() == "2m1") {
         width_ = 1920;
         height_ = 1080;
-    }
-    else if (this->get_parameter("rgb_device").as_string() == "8m1")
-    {
+    } else if (this->get_parameter("rgb_device").as_string() == "8m1") {
         width_ = 3840;
         height_ = 2160;
-    }
-    else
-    {
-        RCLCPP_ERROR(get_logger(), "ERROR: rgb_device parameter has a wrong value. Please choose between '2m1' or '8m1'.");
+    } else {
+        RCLCPP_ERROR(
+            get_logger(),
+            "ERROR: rgb_device parameter has a wrong value. Please choose between '2m1' or '8m1'.");
     }
 }
 
@@ -82,16 +79,14 @@ int RGBNode::initCap()
 {
 #ifdef INTERNAL_DRIVER
     cap_ = std::make_unique<internal::RGBInternalDevice>(new cis::CameraAR0234());
-    if(!cap_->connect())
+    if (!cap_->connect())
 #else
     cap_ = std::make_unique<ExternalDevice>();
-    if(!cap_->connect(width_, height_))
+    if (!cap_->connect(width_, height_))
 #endif
     {
         RCLCPP_INFO(get_logger(), "Camera connected");
-    }
-    else
-    {
+    } else {
         RCLCPP_ERROR(get_logger(), "Camera connection failed");
     }
     return 0;
@@ -106,15 +101,14 @@ void RGBNode::dispInfo(DevInfo devInfo) const
     RCLCPP_INFO(get_logger(), "Height: %d", devInfo.height);
 }
 
-void RGBNode::start(){
-    if (initCap())
-    {
+void RGBNode::start()
+{
+    if (initCap()) {
         RCLCPP_ERROR(get_logger(), "Camera initialization failed");
         rclcpp::shutdown();
     }
 
-    if (cap_->isConnected())
-    {
+    if (cap_->isConnected()) {
         DevInfo devInfo = cap_->getInfo();
         dispInfo(devInfo);
         width_ = devInfo.width;
@@ -122,15 +116,13 @@ void RGBNode::start(){
 
         RCLCPP_INFO(get_logger(), "Start capturing");
         timer_ = this->create_wall_timer(33ms, std::bind(&RGBNode::imgCallback, this));
-    }
-    else
-    {
+    } else {
         RCLCPP_ERROR(get_logger(), "Camera connection failed");
         rclcpp::shutdown();
     }
 }
 
-void RGBNode::pubImage(uint8_t *data)
+void RGBNode::pubImage(uint8_t * data)
 {
     // Msg header
     auto header = std_msgs::msg::Header();
@@ -143,7 +135,7 @@ void RGBNode::pubImage(uint8_t *data)
     imgMsg_.width = width_;
     imgMsg_.height = height_;
     imgMsg_.encoding = sensor_msgs::image_encodings::BGR8;
-    imgMsg_.step =  width_ * 3;
+    imgMsg_.step = width_ * 3;
     imgMsg_.is_bigendian = true;
     imgMsg_.data.assign(data, data + imgMsg_.step * imgMsg_.height);
 #ifdef INTERNAL_DRIVER
@@ -156,17 +148,13 @@ void RGBNode::pubImage(uint8_t *data)
 void RGBNode::imgCallback()
 {
     auto st = this->now();
-    if (!cap_->isConnected())
-    {
+    if (!cap_->isConnected()) {
         RCLCPP_ERROR(get_logger(), "Camera connection lost or unavailable");
         rclcpp::sleep_for(std::chrono::seconds(3));
         RCLCPP_INFO(get_logger(), "New camera connection attempt");
-    }
-    else
-    {
+    } else {
         cv::Mat imgData(height_, width_, CV_8UC2);
-        if (!cap_->getData(imgData.data))
-        {
+        if (!cap_->getData(imgData.data)) {
             cv::resize(imgData, imgData, cv::Size(width_, height_));
             // Cam Info
             auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());
@@ -180,7 +168,6 @@ void RGBNode::imgCallback()
         }
     }
     auto sp = this->now();
-    //RCLCPP_INFO(get_logger(),"Cb time: %f ms", (sp- st).nanoseconds() / 1e6);
 }
 
-} //namespace cis_scm
+}  // namespace cis_scm

@@ -1,17 +1,17 @@
-#ifndef EXTERNAL_DEVICE_HPP
-#define EXTERNAL_DEVICE_HPP
+// Copyright 2025 CIS Corporation
+#ifndef CIS_SCM__EXTERNALDEVICE_HPP_
+#define CIS_SCM__EXTERNALDEVICE_HPP_
 
 #include <sys/ioctl.h>
-#include <string>
 
 #include "Device.h"
 
-namespace cis_scm {
-
+namespace cis_scm
+{
 
 class ExternalDevice : public Device
 {
-public:
+  public:
     ExternalDevice();
     ~ExternalDevice();
 
@@ -19,11 +19,11 @@ public:
     void disconnect();
 
     DevInfo getInfo() const;
-    int getData(uint8_t* data);
+    int getData(uint8_t * data);
 
-private:
+  private:
     void initMmap();
 };
 
-}
-#endif
+}  // namespace cis_scm
+#endif  // CIS_SCM__EXTERNALDEVICE_HPP_

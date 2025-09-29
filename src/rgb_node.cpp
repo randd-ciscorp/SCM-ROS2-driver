@@ -1,25 +1,25 @@
-#include <rclcpp/rclcpp.hpp>
+// Copyright 2025 CIS Corporation
 #include <rclcpp/executors/multi_threaded_executor.hpp>
+#include <rclcpp/rclcpp.hpp>
 
-#include "cis_scm/rgb_driver.hpp"
 #include "cis_scm/Params.hpp"
+#include "cis_scm/rgb_driver.hpp"
 
-int main(int argc, char* argv[])
+int main(int argc, char * argv[])
 {
     rclcpp::NodeOptions options;
     options.allow_undeclared_parameters(true);
     options.automatically_declare_parameters_from_overrides(true);
 
-
     rclcpp::init(argc, argv);
-    std::shared_ptr<cis_scm::RGBNode> rgb_node = std::make_shared<cis_scm::RGBNode>("rgb_node", options);
+    std::shared_ptr<cis_scm::RGBNode> rgb_node =
+        std::make_shared<cis_scm::RGBNode>("rgb_node", options);
 #ifdef INTERNAL_DRIVER
     rgb_node->initImageTransport();
 #endif
     try {
         auto param_handler = std::make_shared<cis_scm::RGBParamHandler>(rgb_node);
-    }
-    catch (const std::exception& e) {
+    } catch (const std::exception & e) {
         RCLCPP_ERROR(rgb_node->get_logger(), "Camera control parameters are not active.");
     }
     rgb_node->start();

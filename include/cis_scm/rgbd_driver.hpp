@@ -1,22 +1,22 @@
-#ifndef RGBD_DRIVER_HPP
-#define RGBD_DRIVER_HPP
+// Copyright 2025 CIS Corporation
+#ifndef CIS_SCM__RGBD_DRIVER_HPP_
+#define CIS_SCM__RGBD_DRIVER_HPP_
 
 #include <vector>
 #include <memory>
 #include <string>
 
+#include <opencv2/opencv.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <sensor_msgs/msg/camera_info.hpp>
 #include <camera_info_manager/camera_info_manager.hpp>
 
-#include <opencv2/opencv.hpp>
-
 #ifndef INTERNAL_DRIVER
-    #include "cis_scm/Device.h"
+#include "cis_scm/Device.h"
 #else
-    #include "cis_scm/InternalDevice.hpp"
+#include "cis_scm/InternalDevice.hpp"
 #endif
 #include "cis_scm/tof_driver.hpp"
 
@@ -41,12 +41,12 @@ struct XYZRGBPixel
 
 class RGBDNode : public ToFCVNode
 {
-public:
+  public:
     RGBDNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
 
     void start() override;
 
-protected:
+  protected:
     std::vector<uint8_t> frameData_;
 
     sensor_msgs::msg::Image imgRGBMsg_;
@@ -65,12 +65,12 @@ protected:
     int initCap() override;
     void importRGBDParameters();
 
-    XYZRGBData splitXYZRGBData(uint8_t *xyzrgbData);
+    XYZRGBData splitXYZRGBData(uint8_t * xyzrgbData);
 
-    void pubRGBImage(uint8_t *data);
-    void pubRGBDPtc(XYZRGBData& xyzrgbdata);
+    void pubRGBImage(uint8_t * data);
+    void pubRGBDPtc(XYZRGBData & xyzrgbdata);
 
     void RGBDCallback();
 };
-}
-#endif
+}  // namespace cis_scm
+#endif  // CIS_SCM__RGBD_DRIVER_HPP_

@@ -1,23 +1,24 @@
-#ifndef TOF_DRIVER_HPP
-#define TOF_DRIVER_HPP
+// Copyright 2025 CIS Corporation
+#ifndef CIS_SCM__TOF_DRIVER_HPP_
+#define CIS_SCM__TOF_DRIVER_HPP_
 
 #include <vector>
 #include <memory>
 #include <string>
 
+#include <opencv2/opencv.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <sensor_msgs/msg/camera_info.hpp>
 #include <camera_info_manager/camera_info_manager.hpp>
 
-#include <opencv2/opencv.hpp>
-
 #ifndef INTERNAL_DRIVER
-    #include "cis_scm/ExternalDevice.hpp"
+#include "cis_scm/ExternalDevice.hpp"
 #else
-    #include <point_cloud_transport/point_cloud_transport.hpp>
-    #include "cis_scm/InternalDevice.hpp"
+#include <point_cloud_transport/point_cloud_transport.hpp>
+
+#include "cis_scm/InternalDevice.hpp"
 #endif
 
 #define MAX_DEPTH 7.5
@@ -34,7 +35,7 @@ struct XYZData
 
 class ToFCVNode : public rclcpp::Node
 {
-public:
+  public:
     ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
 
     virtual void start();
@@ -43,7 +44,7 @@ public:
     void initPointCloudTransport();
 #endif
 
-protected:
+  protected:
     int width_;
     int height_;
 
@@ -81,7 +82,7 @@ protected:
     virtual int initCap();
     void importParams();
 
-    XYZData splitXYZ(float* data);
+    XYZData splitXYZ(float * data);
 
     void dispInfo(DevInfo devInfo) const;
 
@@ -91,5 +92,5 @@ protected:
     void depthCallback();
     void infoCallback();
 };
-}
-#endif
+}  // namespace cis_scm
+#endif  // CIS_SCM__TOF_DRIVER_HPP_
