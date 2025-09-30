@@ -1,5 +1,21 @@
-#ifndef CONTROLS_HPP
-#define CONTROLS_HPP
+// Copyright 2025 CIS Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef CIS_SCM__CONTROLS_HPP_
+#define CIS_SCM__CONTROLS_HPP_
+
+#include <vector>
 
 #include <rclcpp/parameter_client.hpp>
 
@@ -148,10 +164,9 @@ enum rgb_get_param
     RGB_GET_DEFECT_PIXEL_CLUSTER_CORRECTION = 39
 };
 
-
 class CameraCtrl
 {
-public:
+  public:
     virtual void setControlInt(int ctrl, int val) = 0;
     virtual int getControlInt(int ctrl) = 0;
 
@@ -161,14 +176,14 @@ public:
     virtual void setControlBool(int ctrl, bool val) = 0;
     virtual bool getControlBool(int ctrl) = 0;
 
-    virtual void setControlFloatArray(int ctrl, float* vals, int arr_len) = 0;
+    virtual void setControlFloatArray(int ctrl, float * vals, int arr_len) = 0;
     virtual std::vector<float> getControlFloatArray(int ctrl, int arr_len) = 0;
     virtual ~CameraCtrl() = default;
 };
 
 class CameraCtrlExtern : public CameraCtrl
 {
-public:
+  public:
     CameraCtrlExtern();
     ~CameraCtrlExtern();
 
@@ -181,10 +196,10 @@ public:
     void setControlBool(int ctrl, bool val) override;
     bool getControlBool(int ctrl) override;
 
-    void setControlFloatArray(int ctrl, float* vals, int arr_len) override;
+    void setControlFloatArray(int ctrl, float * vals, int arr_len) override;
     std::vector<float> getControlFloatArray(int ctrl, int arr_len) override;
 
-private:
+  private:
     // CIS Protocol device
     int fd_;
     bool ctrl_ok = true;
@@ -194,8 +209,8 @@ private:
 
 class CameraCtrlIntern : public CameraCtrl
 {
-public:
-    CameraCtrlIntern() {};
+  public:
+    CameraCtrlIntern() {}
 
     void setControlInt(int ctrl, int val) override;
     int getControlInt(int ctrl) override;
@@ -206,10 +221,9 @@ public:
     void setControlBool(int ctrl, bool val) override;
     bool getControlBool(int ctrl) override;
 
-    void setControlFloatArray(int ctrl, float* vals, int arr_len) override;
+    void setControlFloatArray(int ctrl, float * vals, int arr_len) override;
     std::vector<float> getControlFloatArray(int ctrl, int arr_len) override;
 };
-
 
 // class ToFControl
 
@@ -230,5 +244,5 @@ public:
 //     float getKillFlyingDelta();
 //     int getIntegrationTime();
 // };
-}
-#endif //CONTROLS_HPP
+}  // namespace cis_scm
+#endif  // CIS_SCM__CONTROLS_HPP_
