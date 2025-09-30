@@ -1,8 +1,22 @@
+// Copyright 2025 CIS Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include "cis_scm/Controls.hpp"
 
 #include <fcntl.h>
-#include <unistd.h>
 #include <termio.h>
+#include <unistd.h>
 
 namespace cis_scm
 {
@@ -10,8 +24,7 @@ namespace cis_scm
 CameraCtrlExtern::CameraCtrlExtern()
 {
     fd_ = open("/dev/ttyACM0", O_RDWR | O_NOCTTY | O_NDELAY);
-    if (fd_ < 0)
-    {
+    if (fd_ < 0) {
         perror("Error opening CIS Protocol device");
         throw std::runtime_error("CameraCtrlExtern init failed");
     }
@@ -23,19 +36,18 @@ void CameraCtrlExtern::configSerial()
 {
     struct termios tty;
     memset(&tty, 0, sizeof(tty));
-    if (tcgetattr(fd_, &tty) != 0)
-    {
+    if (tcgetattr(fd_, &tty) != 0) {
         perror("Error from tcgetattr");
     }
 
     tty.c_cflag |= (CLOCAL | CREAD);
     tty.c_cflag &= ~PARENB;
-    tty.c_cflag &= ~CSTOPB;             // 1 stop bit
-    tty.c_cflag &= ~CSIZE;              // Clear current character size mask
-    tty.c_cflag |= CS8;                 // 8 data bits
-    tty.c_cflag &= ~CRTSCTS;            // No hardware flow control
-    tty.c_iflag &= ~(IXON | IXOFF | IXANY);  // No software flow control
-    tty.c_oflag &= ~OPOST;           // No output processing
+    tty.c_cflag &= ~CSTOPB;                          // 1 stop bit
+    tty.c_cflag &= ~CSIZE;                           // Clear current character size mask
+    tty.c_cflag |= CS8;                              // 8 data bits
+    tty.c_cflag &= ~CRTSCTS;                         // No hardware flow control
+    tty.c_iflag &= ~(IXON | IXOFF | IXANY);          // No software flow control
+    tty.c_oflag &= ~OPOST;                           // No output processing
     tty.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);  // Non-canonical mode
 
     cfsetospeed(&tty, B115200);
@@ -44,16 +56,12 @@ void CameraCtrlExtern::configSerial()
     tty.c_cc[VMIN] = 0;
     tty.c_cc[VTIME] = 10;
 
-    if (tcsetattr(fd_, TCSANOW, &tty) != 0)
-    {
+    if (tcsetattr(fd_, TCSANOW, &tty) != 0) {
         perror("Error from tcsetattr");
     }
 }
 
-CameraCtrlExtern::~CameraCtrlExtern()
-{
-    close(fd_);
-}
+CameraCtrlExtern::~CameraCtrlExtern() { close(fd_); }
 
 void CameraCtrlExtern::setControlInt(int ctrl, int val)
 {
@@ -61,9 +69,8 @@ void CameraCtrlExtern::setControlInt(int ctrl, int val)
     ss << "SU " << ctrl << " " << val << "\r\n";
     std::string cmd = ss.str();
     std::cout << cmd << std::endl;
-    if(write(fd_, cmd.c_str(), cmd.length()) <= 0)
-    {
-       std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
+    if (write(fd_, cmd.c_str(), cmd.length()) <= 0) {
+        std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
     }
     tcdrain(fd_);
 }
@@ -74,9 +81,8 @@ void CameraCtrlExtern::setControlFloat(int ctrl, float val)
     ss << "SU " << ctrl << " " << val << "\r\n";
     std::string cmd = ss.str();
     std::cout << cmd << std::endl;
-    if(write(fd_, cmd.c_str(), cmd.length()) <= 0)
-    {
-       std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
+    if (write(fd_, cmd.c_str(), cmd.length()) <= 0) {
+        std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
     }
     tcdrain(fd_);
 }
@@ -87,28 +93,25 @@ void CameraCtrlExtern::setControlBool(int ctrl, bool val)
     ss << "SU " << ctrl << " " << val << "\r\n";
     std::string cmd = ss.str();
     std::cout << cmd << std::endl;
-    if(write(fd_, cmd.c_str(), cmd.length()) <= 0)
-    {
-       std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
+    if (write(fd_, cmd.c_str(), cmd.length()) <= 0) {
+        std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
     }
     tcdrain(fd_);
 }
 
-void CameraCtrlExtern::setControlFloatArray(int ctrl, float* vals, int arr_len)
+void CameraCtrlExtern::setControlFloatArray(int ctrl, float * vals, int arr_len)
 {
     std::stringstream ss;
     ss << "SU " << ctrl;
-    for (int i = 0; i < arr_len; i++)
-    {
+    for (int i = 0; i < arr_len; i++) {
         ss << " " << vals[i];
     }
     ss << "\r\n";
 
     std::string cmd = ss.str();
     std::cout << cmd << std::endl;
-    if(write(fd_, cmd.c_str(), cmd.length()) <= 0)
-    {
-       std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
+    if (write(fd_, cmd.c_str(), cmd.length()) <= 0) {
+        std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
     }
     tcdrain(fd_);
 }
@@ -123,8 +126,7 @@ int CameraCtrlExtern::getControlInt(int ctrl)
     // get ctrl value
     int ret_val = 0;
     char r_buf[sizeof(int)];
-    while(read(fd_, r_buf, sizeof(int)) <= (ssize_t)sizeof(int))
-    {
+    while (read(fd_, r_buf, sizeof(int)) <= (ssize_t)sizeof(int)) {
         write(fd_, cmd.c_str(), cmd.length());
     }
     tcdrain(fd_);
@@ -141,8 +143,7 @@ float CameraCtrlExtern::getControlFloat(int ctrl)
     // get ctrl value
     int ret_val = 0;
     char r_buf[sizeof(float)];
-    while(read(fd_, r_buf, sizeof(float)) <= (ssize_t)sizeof(float))
-    {
+    while (read(fd_, r_buf, sizeof(float)) <= (ssize_t)sizeof(float)) {
         write(fd_, cmd.c_str(), cmd.length());
     }
     tcdrain(fd_);
@@ -159,8 +160,7 @@ bool CameraCtrlExtern::getControlBool(int ctrl)
     // get ctrl value
     int ret_val = 0;
     char r_buf[sizeof(bool)];
-    while(read(fd_, r_buf, sizeof(bool)) <= (ssize_t)sizeof(bool))
-    {
+    while (read(fd_, r_buf, sizeof(bool)) <= (ssize_t)sizeof(bool)) {
         write(fd_, cmd.c_str(), cmd.length());
     }
     tcdrain(fd_);
@@ -177,9 +177,9 @@ std::vector<float> CameraCtrlExtern::getControlFloatArray(int ctrl, int arr_len)
     // get ctrl value
     std::vector<float> ret_vals(arr_len);
     int nb_spaces = arr_len - 1;
-    char* r_buf = new char[sizeof(float)*arr_len+nb_spaces];
-    while(read(fd_, r_buf, sizeof(float)*arr_len+nb_spaces) <= (ssize_t)sizeof(float)*arr_len+nb_spaces)
-    {
+    char * r_buf = new char[sizeof(float) * arr_len + nb_spaces];
+    while (read(fd_, r_buf, sizeof(float) * arr_len + nb_spaces) <=
+           (ssize_t)sizeof(float) * arr_len + nb_spaces) {
         write(fd_, cmd.c_str(), cmd.length());
     }
     tcdrain(fd_);
@@ -201,7 +201,7 @@ void CameraCtrlIntern::setControlBool(int ctrl, bool val)
     std::cout << "SU " << ctrl << " " << val << std::endl;
 }
 
-void CameraCtrlIntern::setControlFloatArray(int ctrl, float* vals, int arr_len)
+void CameraCtrlIntern::setControlFloatArray(int ctrl, float * vals, int arr_len)
 {
     std::cout << "SU " << ctrl << " " << vals[0] << std::endl;
 }
@@ -233,6 +233,4 @@ std::vector<float> CameraCtrlIntern::getControlFloatArray(int ctrl, int arr_len)
     std::cout << "GU " << ctrl << std::endl;
     return ret_vals;
 }
-} // namespace cis_scm
-
-
+}  // namespace cis_scm
