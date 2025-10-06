@@ -15,12 +15,16 @@
 #ifndef CIS_SCM__CONTROLS_HPP_
 #define CIS_SCM__CONTROLS_HPP_
 
+#include <sys/types.h>
+#include <cstdint>
 #include <vector>
 
 #include <rclcpp/parameter_client.hpp>
 
 namespace cis_scm
 {
+
+inline constexpr int cc_matrix_nb_elems = 9;
 
 enum tof_set_param
 {
@@ -168,13 +172,13 @@ class CameraCtrl
 {
   public:
     virtual void setControlInt(int ctrl, int val) = 0;
-    virtual int getControlInt(int ctrl) = 0;
+    virtual int getControlInt(int ctrl, int & r_val) = 0;
 
     virtual void setControlFloat(int ctrl, float val) = 0;
-    virtual float getControlFloat(int ctrl) = 0;
+    virtual int getControlFloat(int ctrl, float & r_val) = 0;
 
     virtual void setControlBool(int ctrl, bool val) = 0;
-    virtual bool getControlBool(int ctrl) = 0;
+    virtual int getControlBool(int ctrl, bool & r_val) = 0;
 
     virtual void setControlFloatArray(int ctrl, float * vals, int arr_len) = 0;
     virtual std::vector<float> getControlFloatArray(int ctrl, int arr_len) = 0;
@@ -188,13 +192,13 @@ class CameraCtrlExtern : public CameraCtrl
     ~CameraCtrlExtern();
 
     void setControlInt(int ctrl, int val) override;
-    int getControlInt(int ctrl) override;
+    int getControlInt(int ctrl, int & r_val) override;
 
     void setControlFloat(int ctrl, float val) override;
-    float getControlFloat(int ctrl) override;
+    int getControlFloat(int ctrl, float & r_val) override;
 
     void setControlBool(int ctrl, bool val) override;
-    bool getControlBool(int ctrl) override;
+    int getControlBool(int ctrl, bool & r_val) override;
 
     void setControlFloatArray(int ctrl, float * vals, int arr_len) override;
     std::vector<float> getControlFloatArray(int ctrl, int arr_len) override;
@@ -205,6 +209,8 @@ class CameraCtrlExtern : public CameraCtrl
     bool ctrl_ok = true;
 
     void configSerial();
+
+    int readCispVal(std::string & out_val, int ctrl, uint8_t byte_len);
 };
 
 class CameraCtrlIntern : public CameraCtrl
@@ -213,13 +219,13 @@ class CameraCtrlIntern : public CameraCtrl
     CameraCtrlIntern() {}
 
     void setControlInt(int ctrl, int val) override;
-    int getControlInt(int ctrl) override;
+    int getControlInt(int ctrl, int & r_val) override;
 
     void setControlFloat(int ctrl, float val) override;
-    float getControlFloat(int ctrl) override;
+    int getControlFloat(int ctrl, float & r_val) override;
 
     void setControlBool(int ctrl, bool val) override;
-    bool getControlBool(int ctrl) override;
+    int getControlBool(int ctrl, bool & r_val) override;
 
     void setControlFloatArray(int ctrl, float * vals, int arr_len) override;
     std::vector<float> getControlFloatArray(int ctrl, int arr_len) override;

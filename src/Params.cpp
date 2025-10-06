@@ -16,10 +16,19 @@
 
 #include <stdlib.h>
 
+#include <cassert>
 #include <chrono>
 #include <cis_scm/Controls.hpp>
 #include <rcl_interfaces/msg/set_parameters_result.hpp>
+#include <rclcpp/create_timer.hpp>
+#include <rclcpp/logging.hpp>
+#include <rclcpp/parameter.hpp>
+#include <rclcpp/parameter_value.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <string>
+#include <string_view>
+#include <type_traits>
+#include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 using namespace std::chrono_literals;
 
@@ -95,6 +104,37 @@ void ParamHandler::setParam(
         }
     } else {
         RCLCPP_ERROR(logger_, "Parameter value type does not match");
+    }
+}
+
+template <typename T>
+rclcpp::Parameter ParamHandler::makeParamFromCtrlVal(std::string_view param_name, int ctrl_id)
+{
+    // Avoid triggering the callback add_on_set_parameters_callback, this avoid get-set-get-set infinite behavior
+    ignore_set_param_cb_ = true;
+    std::string param_name_str = std::string(param_name);
+    T param_val;
+    int ret_get = -1;
+    if constexpr (std::is_same_v<T, int>) {
+        ret_get = cam_ctrl_->getControlInt(ctrl_id, param_val);
+    } else if constexpr (std::is_same_v<T, float>) {
+        ret_get = cam_ctrl_->getControlFloat(ctrl_id, param_val);
+    } else if constexpr (std::is_same_v<T, bool>) {
+        ret_get = cam_ctrl_->getControlBool(ctrl_id, param_val);
+    } else if constexpr (std::is_array_v<T> && std::is_same_v<std::remove_extent_t<T>, float>) {
+        constexpr int array_size = std::extent_v<T>;
+        std::vector<float> vec_param_vals = cam_ctrl_->getControlFloatArray(ctrl_id, array_size);
+        return rclcpp::Parameter(param_name_str, vec_param_vals);
+    } else {
+        std::cout << typeid(T).name() << std::endl;
+        // static_assert(false, "Unsupported parameter value type");
+        return driver_node_->get_parameter(param_name_str);
+    }
+    if (!ret_get) {
+        return rclcpp::Parameter(param_name_str, param_val);
+    } else {
+        // If problems with getting ctrl value, just return the value from the last update
+        return driver_node_->get_parameter(param_name_str);
     }
 }
 
@@ -190,7 +230,16 @@ RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node)
 
     callback_handle = driver_node_->add_on_set_parameters_callback(
         [this](const std::vector<rclcpp::Parameter> & param)
-            -> rcl_interfaces::msg::SetParametersResult { return this->setParamCB(param); });
+            -> rcl_interfaces::msg::SetParametersResult {
+            if (ignore_set_param_cb_) {
+                ignore_set_param_cb_ = false;
+                return rcl_interfaces::msg::SetParametersResult().set__successful(true);
+            }
+            return this->setParamCB(param);
+        });
+
+    timer_ = driver_node_->create_wall_timer(
+        std::chrono::milliseconds(1000), [this]() { updateControlsParams(); });
     RCLCPP_INFO(driver_node_->get_logger(), "Parameter Handler initialized");
 }
 
@@ -227,7 +276,17 @@ ToFParamHandler::ToFParamHandler(std::shared_ptr<rclcpp::Node> node)
 
     callback_handle = driver_node_->add_on_set_parameters_callback(
         [this](const std::vector<rclcpp::Parameter> & param)
-            -> rcl_interfaces::msg::SetParametersResult { return this->setParamCB(param); });
+            -> rcl_interfaces::msg::SetParametersResult {
+            if (ignore_set_param_cb_) {
+                ignore_set_param_cb_ = false;
+                return rcl_interfaces::msg::SetParametersResult().set__successful(true);
+            }
+            return this->setParamCB(param);
+        });
+
+    timer_ = driver_node_->create_wall_timer(
+        std::chrono::milliseconds(1000), [this]() { updateControlsParams(); });
+
     RCLCPP_INFO(driver_node_->get_logger(), "Parameter Handler initialized");
 }
 
@@ -364,6 +423,81 @@ rcl_interfaces::msg::SetParametersResult RGBParamHandler::setParamCB(
     return res;
 }
 
+void RGBParamHandler::updateControlsParams()
+{
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<bool>(IspRosParams::ae_enable, RGB_GET_AUTO_EXPOSURE_CONTROL));
+    // TODO: add AE controls
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<float>(IspRosParams::manual_gain, RGB_GET_MANUAL_GAIN));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<float>(IspRosParams::integration_time, RGB_GET_INTEGRATION_TIME));
+
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<bool>(IspRosParams::awb_enable, RGB_GET_AUTO_WHITE_BALANCE));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<int>(IspRosParams::awb_mode, RGB_GET_AUTO_WHITE_BALANCE_MODE));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<int>(IspRosParams::awb_index, RGB_GET_AUTO_WHITE_BALANCE_INDEX));
+
+    // TODO: Add AWB damping?
+    //driver_node_->set_parameter(makeParamFromCtrlVal<int>(IspRosPa
+    driver_node_->set_parameter(makeParamFromCtrlVal<float[cc_matrix_nb_elems]>(
+        IspRosParams::wb_cc_matrix, RGB_GET_WHITE_BALANCE_CC_MATRIX));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<int>(IspRosParams::wb_offset_r, RGB_GET_WHITE_BALANCE_OFFGET_R));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<int>(IspRosParams::wb_offset_g, RGB_GET_WHITE_BALANCE_OFFSET_G));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<int>(IspRosParams::wb_offset_b, RGB_GET_WHITE_BALANCE_OFFSET_B));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<float>(IspRosParams::wb_gain_r, RGB_GET_WHITE_BALANCE_GAIN_R));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<float>(IspRosParams::wb_gain_gr, RGB_GET_WHITE_BALANCE_GAIN_GR));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<float>(IspRosParams::wb_gain_gb, RGB_GET_WHITE_BALANCE_GAIN_GB));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<float>(IspRosParams::wb_gain_b, RGB_GET_WHITE_BALANCE_GAIN_B));
+
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<bool>(IspRosParams::denoising_prefilter, RGB_GET_DENOISING_PREFILTER));
+
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<int>(IspRosParams::bls_sub_r, RGB_GET_BLACK_LEVEL_SUBTRUCTION_R));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<int>(IspRosParams::bls_sub_gr, RGB_GET_BLACK_LEVEL_SUBTRUCTION_GR));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<int>(IspRosParams::bls_sub_gb, RGB_GET_BLACK_LEVEL_SUBTRUCTION_GB));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<int>(IspRosParams::bls_sub_b, RGB_GET_BLACK_LEVEL_SUBTRUCTION_B));
+
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<bool>(IspRosParams::lsc_enable, RGB_GET_LENS_SHADING_CORRECTION));
+
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<bool>(IspRosParams::dewarp_bypass, RGB_GET_DEWARP_BYPASS));
+    driver_node_->set_parameter(makeParamFromCtrlVal<bool>(IspRosParams::hflip, RGB_GET_HFLIP));
+    driver_node_->set_parameter(makeParamFromCtrlVal<bool>(IspRosParams::vflip, RGB_GET_VFLIP));
+
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<bool>(IspRosParams::gamma_correction, RGB_GET_GAMMA));
+
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<bool>(IspRosParams::cproc_enable, RGB_GET_COLOR_PROCESSING));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<int>(IspRosParams::cproc_color_space, RGB_GET_COLOR_SPACE));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<int>(IspRosParams::cproc_brightness, RGB_GET_BRIGHTNESS));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<float>(IspRosParams::cproc_contrast, RGB_GET_CONTRAST));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<float>(IspRosParams::cproc_saturation, RGB_GET_SATURATION));
+    driver_node_->set_parameter(makeParamFromCtrlVal<int>(IspRosParams::cproc_hue, RGB_GET_HUE));
+
+    driver_node_->set_parameter(makeParamFromCtrlVal<int>(
+        IspRosParams::dpcc_enable, RGB_GET_DEFECT_PIXEL_CLUSTER_CORRECTION));
+}
+
 rcl_interfaces::msg::SetParametersResult ToFParamHandler::setParamCB(
     const std::vector<rclcpp::Parameter> & parameters)
 {
@@ -398,6 +532,18 @@ rcl_interfaces::msg::SetParametersResult ToFParamHandler::setParamCB(
         }
     }
     return res;
+}
+
+void ToFParamHandler::updateControlsParams()
+{
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<float>(TofRosParams::min_reflect, TOF_GET_MIN_REFLECTANCE));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<float>(TofRosParams::min_confi, TOF_GET_MIN_CONFIDENCE));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<float>(TofRosParams::kill_flyind_delta, TOF_GET_KILL_FLYING_DELTA));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<int>(TofRosParams::integr_time, TOF_GET_INTEGRATION_TIME));
 }
 
 }  // namespace cis_scm

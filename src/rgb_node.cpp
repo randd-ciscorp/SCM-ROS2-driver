@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
 #include <rclcpp/executors/multi_threaded_executor.hpp>
 #include <rclcpp/rclcpp.hpp>
 
@@ -30,8 +31,10 @@ int main(int argc, char * argv[])
 #ifdef INTERNAL_DRIVER
     rgb_node->initImageTransport();
 #endif
+
+    std::shared_ptr<cis_scm::RGBParamHandler> param_handler;
     try {
-        auto param_handler = std::make_shared<cis_scm::RGBParamHandler>(rgb_node);
+        param_handler = std::make_shared<cis_scm::RGBParamHandler>(rgb_node);
     } catch (const std::exception & e) {
         RCLCPP_ERROR(rgb_node->get_logger(), "Camera control parameters are not active.");
     }

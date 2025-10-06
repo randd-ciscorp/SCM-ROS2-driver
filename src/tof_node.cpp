@@ -30,8 +30,10 @@ int main(int argc, char * argv[])
 #ifdef INTERNAL_DRIVER
     tof_node->initPointCloudTransport();
 #endif
+
+    std::shared_ptr<cis_scm::ToFParamHandler> param_handler;
     try {
-        auto param_handler = std::make_shared<cis_scm::ToFParamHandler>(tof_node);
+        param_handler = std::make_shared<cis_scm::ToFParamHandler>(tof_node);
     } catch (const std::exception & e) {
         RCLCPP_ERROR(tof_node->get_logger(), "Camera control parameters are not active.");
     }

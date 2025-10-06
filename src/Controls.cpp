@@ -15,15 +15,23 @@
 #include "cis_scm/Controls.hpp"
 
 #include <fcntl.h>
+#include <sys/types.h>
 #include <termio.h>
 #include <unistd.h>
+#include <cctype>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <exception>
+#include <string>
 
 namespace cis_scm
 {
 
 CameraCtrlExtern::CameraCtrlExtern()
 {
-    fd_ = open("/dev/ttyACM0", O_RDWR | O_NOCTTY | O_NDELAY);
+    fd_ = open("/dev/ttyACM0", O_RDWR | O_NOCTTY);
     if (fd_ < 0) {
         perror("Error opening CIS Protocol device");
         throw std::runtime_error("CameraCtrlExtern init failed");
@@ -54,7 +62,7 @@ void CameraCtrlExtern::configSerial()
     cfsetispeed(&tty, B115200);
 
     tty.c_cc[VMIN] = 0;
-    tty.c_cc[VTIME] = 10;
+    tty.c_cc[VTIME] = 0;
 
     if (tcsetattr(fd_, TCSANOW, &tty) != 0) {
         perror("Error from tcsetattr");
@@ -116,72 +124,99 @@ void CameraCtrlExtern::setControlFloatArray(int ctrl, float * vals, int arr_len)
     tcdrain(fd_);
 }
 
-int CameraCtrlExtern::getControlInt(int ctrl)
+int CameraCtrlExtern::readCispVal(std::string & out_val, int ctrl_id, uint8_t byte_len)
 {
     // ctrl value query
     std::stringstream ss;
-    ss << "GU " << ctrl;
+    ss << "GU " << ctrl_id << "\r";
     std::string cmd = ss.str();
 
     // get ctrl value
-    int ret_val = 0;
-    char r_buf[sizeof(int)];
-    while (read(fd_, r_buf, sizeof(int)) <= (ssize_t)sizeof(int)) {
-        write(fd_, cmd.c_str(), cmd.length());
+    char r_buf[256];
+    memset(r_buf, 0, sizeof(r_buf));
+    usleep(1000);
+    tcflush(fd_, TCIOFLUSH);
+    write(fd_, cmd.c_str(), cmd.length());
+
+    usleep(1000);
+    // tcflush(fd_, TCOFLUSH);
+
+    int r = read(fd_, &r_buf, byte_len);
+    // tcdrain(fd_);
+    if (r > 0) {
+        out_val.append(r_buf, r_buf + r);
     }
-    tcdrain(fd_);
-    return ret_val;
+    // printf("Read %d: \"%s\"\n", r, out_val.c_str());
+    return !out_val.empty();
 }
 
-float CameraCtrlExtern::getControlFloat(int ctrl)
+int CameraCtrlExtern::getControlInt(int ctrl, int & r_val)
 {
-    // ctrl value query
-    std::stringstream ss;
-    ss << "GU " << ctrl;
-    std::string cmd = ss.str();
-
-    // get ctrl value
-    int ret_val = 0;
-    char r_buf[sizeof(float)];
-    while (read(fd_, r_buf, sizeof(float)) <= (ssize_t)sizeof(float)) {
-        write(fd_, cmd.c_str(), cmd.length());
+    std::string r_str;
+    int r = readCispVal(r_str, ctrl, 255);
+    if (r) {
+        // Having two \n before ctrl value
+        size_t val_pos = r_str.find_first_of("\n");
+        size_t val_pos_end = r_str.find_first_of("\n", val_pos + 2);
+        try {
+            r_val = std::stoi(r_str.substr(val_pos, val_pos_end - val_pos));
+            return 0;
+        } catch (std::exception & e) {
+            // Could't find right control value from serial transfer
+        }
     }
-    tcdrain(fd_);
-    return ret_val;
+    return -1;
 }
 
-bool CameraCtrlExtern::getControlBool(int ctrl)
+int CameraCtrlExtern::getControlFloat(int ctrl, float & r_val)
 {
-    // ctrl value query
-    std::stringstream ss;
-    ss << "GU " << ctrl;
-    std::string cmd = ss.str();
-
-    // get ctrl value
-    int ret_val = 0;
-    char r_buf[sizeof(bool)];
-    while (read(fd_, r_buf, sizeof(bool)) <= (ssize_t)sizeof(bool)) {
-        write(fd_, cmd.c_str(), cmd.length());
+    std::string r_str;
+    int r = readCispVal(r_str, ctrl, 255);
+    if (r) {
+        // Having two \n before ctrl value
+        size_t val_pos = r_str.find_first_of("\n");
+        size_t val_pos_end = r_str.find_first_of("\n", val_pos + 2);
+        try {
+            r_val = std::stof(r_str.substr(val_pos, val_pos_end - val_pos));
+            return 0;
+        } catch (std::exception & e) {
+            // Could't find right control value from serial transfer
+        }
     }
-    tcdrain(fd_);
-    return ret_val;
+    return -1;
+}
+
+int CameraCtrlExtern::getControlBool(int ctrl, bool & r_val)
+{
+    std::string r_str;
+    int r = readCispVal(r_str, ctrl, 255);
+    if (r) {
+        // Having two \n before ctrl value
+        size_t val_pos = r_str.find_first_of("\n");
+        size_t val_pos_end = r_str.find_first_of("\n", val_pos + 2);
+        try {
+            r_val = std::stoi(r_str.substr(val_pos, val_pos_end - val_pos));
+            return 0;
+        } catch (std::exception & e) {
+            // Could't find right control value from serial transfer
+        }
+    }
+    return -1;
 }
 
 std::vector<float> CameraCtrlExtern::getControlFloatArray(int ctrl, int arr_len)
 {
     // ctrl value query
     std::stringstream ss;
-    ss << "GU " << ctrl;
+    ss << "GU " << ctrl << "\r\n";
     std::string cmd = ss.str();
 
     // get ctrl value
     std::vector<float> ret_vals(arr_len);
     int nb_spaces = arr_len - 1;
     char * r_buf = new char[sizeof(float) * arr_len + nb_spaces];
-    while (read(fd_, r_buf, sizeof(float) * arr_len + nb_spaces) <=
-           (ssize_t)sizeof(float) * arr_len + nb_spaces) {
-        write(fd_, cmd.c_str(), cmd.length());
-    }
+    write(fd_, cmd.c_str(), cmd.length());
+    read(fd_, r_buf, sizeof(float) * arr_len + nb_spaces);
     tcdrain(fd_);
     delete[] r_buf;
     return ret_vals;
@@ -206,21 +241,21 @@ void CameraCtrlIntern::setControlFloatArray(int ctrl, float * vals, int arr_len)
     std::cout << "SU " << ctrl << " " << vals[0] << std::endl;
 }
 
-int CameraCtrlIntern::getControlInt(int ctrl)
+int CameraCtrlIntern::getControlInt(int ctrl, int & r_val)
 {
     int ret_val = 0;
     std::cout << "GU " << ctrl << std::endl;
     return ret_val;
 }
 
-float CameraCtrlIntern::getControlFloat(int ctrl)
+int CameraCtrlIntern::getControlFloat(int ctrl, float & r_val)
 {
     float ret_val = 0.;
     std::cout << "GU " << ctrl << std::endl;
     return ret_val;
 }
 
-bool CameraCtrlIntern::getControlBool(int ctrl)
+int CameraCtrlIntern::getControlBool(int ctrl, bool & r_val)
 {
     bool ret_val = 0.;
     std::cout << "GU " << ctrl << std::endl;

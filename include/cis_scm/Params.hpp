@@ -17,6 +17,8 @@
 
 #include <memory>
 #include <optional>
+#include <rclcpp/parameter.hpp>
+#include <rclcpp/timer.hpp>
 #include <string_view>
 #include <vector>
 
@@ -24,6 +26,7 @@
 #include <rcl_interfaces/msg/set_parameters_result.hpp>
 
 #include "cis_scm/Controls.hpp"
+#include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 namespace cis_scm
 {
@@ -104,6 +107,12 @@ class ParamHandler
 
     virtual rcl_interfaces::msg::SetParametersResult setParamCB(
         const std::vector<rclcpp::Parameter> & parameters) = 0;
+
+    bool ignore_set_param_cb_ = false;
+    rclcpp::TimerBase::SharedPtr timer_;
+    virtual void updateControlsParams() = 0;
+    template <typename T>
+    rclcpp::Parameter makeParamFromCtrlVal(std::string_view param_name, int ctrl_id);
 };
 
 class RGBParamHandler : public ParamHandler
@@ -114,6 +123,8 @@ class RGBParamHandler : public ParamHandler
   private:
     rcl_interfaces::msg::SetParametersResult setParamCB(
         const std::vector<rclcpp::Parameter> & parameters) override;
+
+    void updateControlsParams() override;
 };
 
 class ToFParamHandler : public ParamHandler
@@ -124,6 +135,8 @@ class ToFParamHandler : public ParamHandler
   private:
     rcl_interfaces::msg::SetParametersResult setParamCB(
         const std::vector<rclcpp::Parameter> & parameters) override;
+
+    void updateControlsParams() override;
 };
 }  // namespace cis_scm
 #endif  // CIS_SCM__PARAMS_HPP_
