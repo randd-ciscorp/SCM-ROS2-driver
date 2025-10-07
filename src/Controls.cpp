@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <termio.h>
 #include <unistd.h>
+#include <algorithm>
 #include <cctype>
 #include <cstddef>
 #include <cstdint>
@@ -25,6 +26,7 @@
 #include <cstdlib>
 #include <exception>
 #include <string>
+#include <vector>
 
 namespace cis_scm
 {
@@ -134,11 +136,11 @@ int CameraCtrlExtern::readCispVal(std::string & out_val, int ctrl_id, uint8_t by
     // get ctrl value
     char r_buf[256];
     memset(r_buf, 0, sizeof(r_buf));
-    usleep(1000);
     tcflush(fd_, TCIOFLUSH);
     write(fd_, cmd.c_str(), cmd.length());
 
-    usleep(1000);
+    // Data query and transfer takes time --> Wait to receive all data
+    usleep(20000);
     // tcflush(fd_, TCOFLUSH);
 
     int r = read(fd_, &r_buf, byte_len);
@@ -146,6 +148,7 @@ int CameraCtrlExtern::readCispVal(std::string & out_val, int ctrl_id, uint8_t by
     if (r > 0) {
         out_val.append(r_buf, r_buf + r);
     }
+
     // printf("Read %d: \"%s\"\n", r, out_val.c_str());
     return !out_val.empty();
 }
@@ -204,22 +207,29 @@ int CameraCtrlExtern::getControlBool(int ctrl, bool & r_val)
     return -1;
 }
 
-std::vector<float> CameraCtrlExtern::getControlFloatArray(int ctrl, int arr_len)
+int CameraCtrlExtern::getControlFloatArray(int ctrl, std::vector<float> & r_vals, int arr_len)
 {
-    // ctrl value query
-    std::stringstream ss;
-    ss << "GU " << ctrl << "\r\n";
-    std::string cmd = ss.str();
-
-    // get ctrl value
-    std::vector<float> ret_vals(arr_len);
-    int nb_spaces = arr_len - 1;
-    char * r_buf = new char[sizeof(float) * arr_len + nb_spaces];
-    write(fd_, cmd.c_str(), cmd.length());
-    read(fd_, r_buf, sizeof(float) * arr_len + nb_spaces);
-    tcdrain(fd_);
-    delete[] r_buf;
-    return ret_vals;
+    std::string r_str;
+    int r = readCispVal(r_str, ctrl, 255);
+    if (r) {
+        // Having two \n before ctrl value
+        size_t val_pos = r_str.find_first_of("\n");
+        size_t val_pos_end = r_str.find_first_of("\n", val_pos + 2);
+        r_vals = std::vector<float>(10);
+        try {
+            auto r_sub_str = r_str.substr(val_pos, val_pos_end - val_pos);
+            int st_pos = 0;
+            for (int i = 0; i < arr_len; i++) {
+                size_t space_pos = r_sub_str.find(" ", st_pos);
+                r_vals[i] = std::stof(r_sub_str.substr(st_pos, space_pos - st_pos));
+                st_pos = space_pos + 1;
+            }
+            return 0;
+        } catch (std::exception & e) {
+            // Could't find right control value from serial transfer
+        }
+    }
+    return -1;
 }
 void CameraCtrlIntern::setControlInt(int ctrl, int val)
 {
@@ -262,10 +272,10 @@ int CameraCtrlIntern::getControlBool(int ctrl, bool & r_val)
     return ret_val;
 }
 
-std::vector<float> CameraCtrlIntern::getControlFloatArray(int ctrl, int arr_len)
+int CameraCtrlIntern::getControlFloatArray(int ctrl, std::vector<float> & r_vals, int arr_len)
 {
     std::vector<float> ret_vals(arr_len);
     std::cout << "GU " << ctrl << std::endl;
-    return ret_vals;
+    return -1;
 }
 }  // namespace cis_scm

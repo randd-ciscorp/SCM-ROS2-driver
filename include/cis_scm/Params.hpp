@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <optional>
+#include <rclcpp/callback_group.hpp>
 #include <rclcpp/parameter.hpp>
 #include <rclcpp/timer.hpp>
 #include <string_view>
@@ -107,6 +108,8 @@ class ParamHandler
 
     virtual rcl_interfaces::msg::SetParametersResult setParamCB(
         const std::vector<rclcpp::Parameter> & parameters) = 0;
+
+    rclcpp::CallbackGroup::SharedPtr params_cb_grp_;
 
     bool ignore_set_param_cb_ = false;
     rclcpp::TimerBase::SharedPtr timer_;

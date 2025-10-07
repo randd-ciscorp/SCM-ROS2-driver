@@ -181,7 +181,8 @@ class CameraCtrl
     virtual int getControlBool(int ctrl, bool & r_val) = 0;
 
     virtual void setControlFloatArray(int ctrl, float * vals, int arr_len) = 0;
-    virtual std::vector<float> getControlFloatArray(int ctrl, int arr_len) = 0;
+    virtual int getControlFloatArray(int ctrl, std::vector<float> & r_vals, int arr_len) = 0;
+
     virtual ~CameraCtrl() = default;
 };
 
@@ -201,7 +202,7 @@ class CameraCtrlExtern : public CameraCtrl
     int getControlBool(int ctrl, bool & r_val) override;
 
     void setControlFloatArray(int ctrl, float * vals, int arr_len) override;
-    std::vector<float> getControlFloatArray(int ctrl, int arr_len) override;
+    int getControlFloatArray(int ctrl, std::vector<float> & r_vals, int arr_len) override;
 
   private:
     // CIS Protocol device
@@ -228,7 +229,7 @@ class CameraCtrlIntern : public CameraCtrl
     int getControlBool(int ctrl, bool & r_val) override;
 
     void setControlFloatArray(int ctrl, float * vals, int arr_len) override;
-    std::vector<float> getControlFloatArray(int ctrl, int arr_len) override;
+    int getControlFloatArray(int ctrl, std::vector<float> & r_vals, int arr_len) override;
 };
 
 // class ToFControl

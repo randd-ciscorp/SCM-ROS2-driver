@@ -15,6 +15,7 @@
 #include <memory>
 
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/executors/multi_threaded_executor.hpp>
 
 #include "cis_scm/Params.hpp"
 #include "cis_scm/tof_driver.hpp"
@@ -38,7 +39,11 @@ int main(int argc, char * argv[])
         RCLCPP_ERROR(tof_node->get_logger(), "Camera control parameters are not active.");
     }
     tof_node->start();
-    rclcpp::spin(tof_node);
+
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(tof_node);
+
+    executor.spin();
     rclcpp::shutdown();
     return 0;
 }

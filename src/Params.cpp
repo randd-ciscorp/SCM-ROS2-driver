@@ -20,6 +20,7 @@
 #include <chrono>
 #include <cis_scm/Controls.hpp>
 #include <rcl_interfaces/msg/set_parameters_result.hpp>
+#include <rclcpp/callback_group.hpp>
 #include <rclcpp/create_timer.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/parameter.hpp>
@@ -28,6 +29,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <vector>
 #include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 using namespace std::chrono_literals;
@@ -123,7 +125,8 @@ rclcpp::Parameter ParamHandler::makeParamFromCtrlVal(std::string_view param_name
         ret_get = cam_ctrl_->getControlBool(ctrl_id, param_val);
     } else if constexpr (std::is_array_v<T> && std::is_same_v<std::remove_extent_t<T>, float>) {
         constexpr int array_size = std::extent_v<T>;
-        std::vector<float> vec_param_vals = cam_ctrl_->getControlFloatArray(ctrl_id, array_size);
+        std::vector<float> vec_param_vals;
+        ret_get = cam_ctrl_->getControlFloatArray(ctrl_id, vec_param_vals, array_size);
         return rclcpp::Parameter(param_name_str, vec_param_vals);
     } else {
         std::cout << typeid(T).name() << std::endl;
@@ -217,16 +220,19 @@ RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node)
         IspRosParams::cproc_brightness, -30,
         setParamDescriptor(ParameterType::PARAMETER_INTEGER, -127, 127, 1));
     declareParam(
-        IspRosParams::cproc_brightness, 0.804688,
+        IspRosParams::cproc_contrast, 0.804688,
         setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 1.99, 0.000001));
     declareParam(
-        IspRosParams::cproc_brightness, 0.328125,
+        IspRosParams::cproc_saturation, 1.328125,
         setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 1.99, 0.000001));
     declareParam(
-        IspRosParams::cproc_brightness, -17,
+        IspRosParams::cproc_hue, -17,
         setParamDescriptor(ParameterType::PARAMETER_INTEGER, -90, 89, 1));
 
     declareParam(IspRosParams::dpcc_enable, true);
+
+    params_cb_grp_ =
+        driver_node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
     callback_handle = driver_node_->add_on_set_parameters_callback(
         [this](const std::vector<rclcpp::Parameter> & param)
@@ -239,7 +245,8 @@ RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node)
         });
 
     timer_ = driver_node_->create_wall_timer(
-        std::chrono::milliseconds(1000), [this]() { updateControlsParams(); });
+        std::chrono::milliseconds(1000), [this]() { updateControlsParams(); }, params_cb_grp_);
+
     RCLCPP_INFO(driver_node_->get_logger(), "Parameter Handler initialized");
 }
 
@@ -274,6 +281,9 @@ ToFParamHandler::ToFParamHandler(std::shared_ptr<rclcpp::Node> node)
         TofRosParams::integr_time, 1000,
         setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1000, 1000));
 
+    params_cb_grp_ =
+        driver_node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
     callback_handle = driver_node_->add_on_set_parameters_callback(
         [this](const std::vector<rclcpp::Parameter> & param)
             -> rcl_interfaces::msg::SetParametersResult {
@@ -285,7 +295,7 @@ ToFParamHandler::ToFParamHandler(std::shared_ptr<rclcpp::Node> node)
         });
 
     timer_ = driver_node_->create_wall_timer(
-        std::chrono::milliseconds(1000), [this]() { updateControlsParams(); });
+        std::chrono::milliseconds(1000), [this]() { updateControlsParams(); }, params_cb_grp_);
 
     RCLCPP_INFO(driver_node_->get_logger(), "Parameter Handler initialized");
 }
@@ -435,8 +445,9 @@ void RGBParamHandler::updateControlsParams()
 
     driver_node_->set_parameter(
         makeParamFromCtrlVal<bool>(IspRosParams::awb_enable, RGB_GET_AUTO_WHITE_BALANCE));
-    driver_node_->set_parameter(
-        makeParamFromCtrlVal<int>(IspRosParams::awb_mode, RGB_GET_AUTO_WHITE_BALANCE_MODE));
+    // AWB mode removed --> made a more convenient way with awb_enable and awb_index
+    // driver_node_->set_parameter(
+    //     makeParamFromCtrlVal<int>(IspRosParams::awb_mode, RGB_GET_AUTO_WHITE_BALANCE_MODE));
     driver_node_->set_parameter(
         makeParamFromCtrlVal<int>(IspRosParams::awb_index, RGB_GET_AUTO_WHITE_BALANCE_INDEX));
 

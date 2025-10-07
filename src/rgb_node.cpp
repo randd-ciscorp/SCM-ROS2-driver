@@ -13,8 +13,9 @@
 // limitations under the License.
 
 #include <memory>
-#include <rclcpp/executors/multi_threaded_executor.hpp>
+
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/executors/multi_threaded_executor.hpp>
 
 #include "cis_scm/Params.hpp"
 #include "cis_scm/rgb_driver.hpp"
@@ -39,7 +40,11 @@ int main(int argc, char * argv[])
         RCLCPP_ERROR(rgb_node->get_logger(), "Camera control parameters are not active.");
     }
     rgb_node->start();
-    rclcpp::spin(rgb_node);
+
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(rgb_node);
+
+    executor.spin();
     rclcpp::shutdown();
 
     return 0;
