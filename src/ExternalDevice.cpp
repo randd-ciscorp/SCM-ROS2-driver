@@ -23,6 +23,10 @@
 #include <unistd.h>
 
 #include <cstdio>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <stdio.h>
 
 #include "cis_scm/Device.h"
 
@@ -70,13 +74,51 @@ void ExternalDevice::initMmap()
     }
 }
 
+/**
+* @brief Find the video device created by SCM's uvc, and open id to fd_.
+* @return 0: SCM video dev found and opened  | -1: SCM video dev not found or opened. 
+*/
+int ExternalDevice::openVideoDev()
+{
+    for (int i = 0; i < 10; i++) {
+        char dev_sysfile[128];
+        sprintf(dev_sysfile, "/sys/class/video4linux/video%d/name", i);
+
+        std::ifstream ifs(dev_sysfile);
+        if (ifs.fail()) {
+            continue;
+        }
+
+        std::string dev_name;
+        std::getline(ifs, dev_name);
+
+        if (dev_name == cis_dev_name) {
+            char dev_file[32];
+            sprintf(dev_file, "/dev/video%d", i);
+
+            // SCM provides two /dev/video --> must select the right one
+            fd_ = open(dev_file, O_RDWR | O_NONBLOCK);
+            if (fd_ < 0) {
+                return -1;
+            }
+            v4l2_capability caps{};
+            if (xioctl(fd_, VIDIOC_QUERYCAP, &caps) < 0) return -1;
+            // Right /dev/video has VIDEO_CAPTURE cap
+            if (!(caps.capabilities & V4L2_CAP_VIDEO_CAPTURE)) {
+                close(fd_);
+                continue;
+            }
+
+            return 0;
+        }
+    }
+    return -1;
+}
+
 int ExternalDevice::connect(int width, int height)
 {
-    const char * deviceName = "/dev/video0";
-
     // Open
-    fd_ = open(deviceName, O_RDWR | O_NONBLOCK);
-    if (fd_ < 0) {
+    if (openVideoDev()) {
         fprintf(stderr, "Could not find camera. Is camera connected? \n");
         return -1;
     }
@@ -134,7 +176,9 @@ DevInfo ExternalDevice::getInfo() const
         errnoExit("Capability query");
     }
 
-    struct v4l2_format fmt{};
+    struct v4l2_format fmt
+    {
+    };
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (xioctl(fd_, VIDIOC_G_FMT, &fmt) < 0) {
         errnoExit("Get device format");
@@ -160,7 +204,9 @@ int ExternalDevice::getData(uint8_t * data)
     }
 
     if (FD_ISSET(fd_, &fds)) {
-        struct v4l2_buffer in_buf{};
+        struct v4l2_buffer in_buf
+        {
+        };
         in_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         in_buf.memory = V4L2_MEMORY_MMAP;
 

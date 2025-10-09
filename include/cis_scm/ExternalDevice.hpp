@@ -22,6 +22,8 @@
 namespace cis_scm
 {
 
+inline constexpr std::string_view cis_dev_name = "SCM Series: UVC Camera";
+
 class ExternalDevice : public Device
 {
   public:
@@ -36,6 +38,7 @@ class ExternalDevice : public Device
 
   private:
     void initMmap();
+    int openVideoDev();
 };
 
 }  // namespace cis_scm
