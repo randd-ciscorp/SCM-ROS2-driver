@@ -24,7 +24,6 @@ def generate_launch_description():
                 namespace='cis_scm',
                 executable='tof_node',
                 name='tof_node',
-                parameters=[{'camera_params': 'package://cis_scm/cam_param.yaml'}],
             ),
             Node(
                 package='tf2_ros',

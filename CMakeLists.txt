@@ -77,7 +77,6 @@ else()
     install(TARGETS tof_node rgbd_node rgb_node DESTINATION lib/${PROJECT_NAME})
 endif()
 
-install(FILES cam_param.yaml DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
 

@@ -36,7 +36,7 @@ RGBNode::RGBNode(const std::string node_name, const rclcpp::NodeOptions & node_o
 {
     infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicPrefix_ + "/cam_info", 10);
 
-    cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm");
+    cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this);
 
 #ifndef INTERNAL_DRIVER
     imgPub_ = create_publisher<sensor_msgs::msg::Image>(topicPrefix_ + "/img_rgb", 10);
@@ -46,23 +46,6 @@ RGBNode::RGBNode(const std::string node_name, const rclcpp::NodeOptions & node_o
 
 void RGBNode::importParams()
 {
-    // Cam params
-    if (!this->has_parameter("camera_params")) {
-        this->declare_parameter("camera_params", "package://cis_scm/cam_param.yaml");
-    }
-    std::string param_file_path = this->get_parameter("camera_params").as_string();
-
-    if (param_file_path != "") {
-        RCLCPP_INFO(get_logger(), "Load parameters file: %s", param_file_path.c_str());
-        if (cinfo_->validateURL(param_file_path)) {
-            cinfo_->loadCameraInfo(param_file_path);
-        } else {
-            RCLCPP_ERROR(
-                get_logger(), "Could not find parameter file at: %s", param_file_path.c_str());
-            rclcpp::shutdown();
-        }
-    }
-
     // SCM-2M1 or SCM-8M1
     if (!this->has_parameter("rgb_device")) {
         this->declare_parameter("rgb_device", "2m1");
@@ -70,13 +53,37 @@ void RGBNode::importParams()
     if (this->get_parameter("rgb_device").as_string() == "2m1") {
         width_ = 1920;
         height_ = 1080;
+        // cinfo_->setCameraName("scm-2m1");
+
+        if (!this->has_parameter("rgb_camera_params")) {
+            this->declare_parameter(
+                "rgb_camera_params", "package://cis_scm/config/cam_params/2m1_params.yaml");
+        }
     } else if (this->get_parameter("rgb_device").as_string() == "8m1") {
         width_ = 3840;
         height_ = 2160;
+        cinfo_->setCameraName("scm-8m1");
+
+        if (!this->has_parameter("rgb_camera_params")) {
+            this->declare_parameter(
+                "rgb_camera_params", "package://cis_scm/config/cam_params/8m1_params.yaml");
+        }
     } else {
         RCLCPP_ERROR(
             get_logger(),
             "ERROR: rgb_device parameter has a wrong value. Please choose between '2m1' or '8m1'.");
+    }
+
+    std::string rgb_param_file_path = this->get_parameter("rgb_camera_params").as_string();
+    if (rgb_param_file_path != "") {
+        RCLCPP_INFO(get_logger(), "Load parameters file: %s", rgb_param_file_path.c_str());
+        if (cinfo_->validateURL(rgb_param_file_path)) {
+            cinfo_->loadCameraInfo(rgb_param_file_path);
+        } else {
+            RCLCPP_ERROR(
+                get_logger(), "Could not find parameter file at: %s", rgb_param_file_path.c_str());
+            rclcpp::shutdown();
+        }
     }
 }
 

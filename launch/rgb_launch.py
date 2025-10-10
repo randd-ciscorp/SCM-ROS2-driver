@@ -32,7 +32,6 @@ def generate_launch_description():
                 executable='rgb_node',
                 name='rgb_node',
                 parameters=[
-                    {'camera_params': 'package://cis_scm/cam_param.yaml'},
                     config,
                 ],
             ),

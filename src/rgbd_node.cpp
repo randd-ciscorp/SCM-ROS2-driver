@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cis_scm/rgbd_driver.hpp>
-
+#include <memory>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/executors/multi_threaded_executor.hpp>
+
+#include "cis_scm/Params.hpp"
+#include "cis_scm/rgbd_driver.hpp"
 
 int main(int argc, char * argv[])
 {
@@ -24,6 +27,15 @@ int main(int argc, char * argv[])
     rclcpp::init(argc, argv);
     std::shared_ptr<cis_scm::RGBDNode> rgbd_node =
         std::make_shared<cis_scm::RGBDNode>("rgbd_node", options);
+
+    std::shared_ptr<cis_scm::RGBParamHandler> rgb_param_handler;
+    std::shared_ptr<cis_scm::ToFParamHandler> tof_param_handler;
+    try {
+        rgb_param_handler = std::make_shared<cis_scm::RGBParamHandler>(rgbd_node);
+        tof_param_handler = std::make_shared<cis_scm::ToFParamHandler>(rgbd_node);
+    } catch (const std::exception & e) {
+        RCLCPP_ERROR(rgbd_node->get_logger(), "Camera control parameters are not active.");
+    }
     rgbd_node->start();
     rclcpp::spin(rgbd_node);
     rclcpp::shutdown();

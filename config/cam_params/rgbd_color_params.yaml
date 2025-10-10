@@ -1,0 +1,34 @@
+image_width: 640
+image_height: 480
+camera_name: scm-rgbd1
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [2050, 0, 967, 0, 2046, 540, 0, 0, 1]
+distortion_model: plumb_bob
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [-0.594, 0.508, 0.0009, -0.007, -0.5004]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1, 0, 0, 0, 1, 0, 0, 0, 1]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data:
+    [
+      2063.44,
+      -35.30,
+      930.7,
+      -51.342,
+      -2.212,
+      2016.12,
+      642.513,
+      5.1534,
+      0.00175,
+      -0.0504,
+      0.998,
+      0.0175,
+    ]

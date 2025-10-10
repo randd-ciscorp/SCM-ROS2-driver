@@ -1,0 +1,20 @@
+image_width: 1920
+image_height: 1080
+camera_name: scm-2m1
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [2050, 0, 967, 0, 2046, 540, 0, 0, 1]
+distortion_model: plumb_bob
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [-0.594, 0.508, 0.0009, -0.001, -0.5004]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1, 0, 0, 0, 1, 0, 0, 0, 1]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [2050, 0, 967, 0, 0, 2046, 540, 0, 0, 0, 1, 0]

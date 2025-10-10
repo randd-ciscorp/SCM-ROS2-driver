@@ -1,20 +1,20 @@
 image_width: 640
 image_height: 480
-camera_name: scm
+camera_name: scm-tof1
 camera_matrix:
   rows: 3
   cols: 3
-  data: [564, 0, 320, 0, 564, 240, 0, 0, 1]
+  data: [570, 0, 325, 0, 570, 260, 0, 0, 1]
 distortion_model: plumb_bob
 distortion_coefficients:
   rows: 1
   cols: 5
-  data: [1, 1, 1, 1, 1]
-rectification_matrix: 
+  data: [-0.329, 0.0971, 0, 0, 0.0653]
+rectification_matrix:
   rows: 3
   cols: 3
   data: [1, 0, 0, 0, 1, 0, 0, 0, 1]
 projection_matrix:
   rows: 3
   cols: 4
-  data: [564, 0, 320, 0, 0, 564, 240, 0, 0, 0, 1, 0]
+  data: [570, 0, 325, 0, 0, 570, 260, 0, 0, 0, 1, 0]

@@ -14,7 +14,9 @@
 
 #include "cis_scm/tof_driver.hpp"
 
+#include <camera_info_manager/camera_info_manager.hpp>
 #include <chrono>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -52,7 +54,8 @@ ToFCVNode::ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & no
     depthPCLPub_ = create_publisher<sensor_msgs::msg::PointCloud2>(topicPrefix_ + "/pcl_depth", 10);
 #endif
 
-    cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm");
+    cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-tof1");
+
     importParams();
 }
 
@@ -104,18 +107,19 @@ void ToFCVNode::dispInfo(DevInfo devInfo) const
 void ToFCVNode::importParams()
 {
     // Cam params
-    if (!this->has_parameter("camera_params")) {
-        this->declare_parameter("camera_params", "package://cis_scm/cam_param.yaml");
+    if (!this->has_parameter("tof_camera_params")) {
+        this->declare_parameter(
+            "tof_camera_params", "package://cis_scm/config/cam_params/tof_params.yaml");
     }
-    std::string param_file_path = this->get_parameter("camera_params").as_string();
+    std::string tof_param_file_path = this->get_parameter("tof_camera_params").as_string();
 
-    if (param_file_path != "") {
-        RCLCPP_INFO(get_logger(), "Load parameters file: %s", param_file_path.c_str());
-        if (cinfo_->validateURL(param_file_path)) {
-            cinfo_->loadCameraInfo(param_file_path);
+    if (tof_param_file_path != "") {
+        RCLCPP_INFO(get_logger(), "Load parameters file: %s", tof_param_file_path.c_str());
+        if (cinfo_->validateURL(tof_param_file_path)) {
+            cinfo_->loadCameraInfo(tof_param_file_path);
         } else {
             RCLCPP_ERROR(
-                get_logger(), "Could not find parameter file at: %s", param_file_path.c_str());
+                get_logger(), "Could not find parameter file at: %s", tof_param_file_path.c_str());
             rclcpp::shutdown();
         }
     }
