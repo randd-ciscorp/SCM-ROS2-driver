@@ -88,7 +88,7 @@ class ToFCVNode : public rclcpp::Node
     rclcpp::CallbackGroup::SharedPtr crit_cb_grp_;
     rclcpp::CallbackGroup::SharedPtr non_crit_cb_grp_;
 
-    std::string topicPrefix_ = "camera/depth";
+    std::string topicDepthPrefix_ = "depth/";
     std::string cameraBaseFrame_ = "camera_base";
     std::string depthCameraFrame_ = "depth_camera_link";
 

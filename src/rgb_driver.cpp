@@ -34,12 +34,12 @@ namespace cis_scm
 RGBNode::RGBNode(const std::string node_name, const rclcpp::NodeOptions & node_options)
 : Node(node_name, node_options)
 {
-    infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicPrefix_ + "/cam_info", 10);
+    infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicRGBPrefix_ + "camera_info", 10);
 
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this);
 
 #ifndef INTERNAL_DRIVER
-    imgPub_ = create_publisher<sensor_msgs::msg::Image>(topicPrefix_ + "/img_rgb", 10);
+    imgPub_ = create_publisher<sensor_msgs::msg::Image>(topicRGBPrefix_ + "image", 10);
 #endif
     importParams();
 }
