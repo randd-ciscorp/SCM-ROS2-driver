@@ -24,9 +24,8 @@
 
 #include <cstdio>
 #include <fstream>
-#include <iostream>
+#include <sstream>
 #include <string>
-#include <stdio.h>
 
 #include "cis_scm/Device.h"
 
@@ -81,8 +80,9 @@ void ExternalDevice::initMmap()
 int ExternalDevice::openVideoDev()
 {
     for (int i = 0; i < 10; i++) {
-        char dev_sysfile[128];
-        sprintf(dev_sysfile, "/sys/class/video4linux/video%d/name", i);
+        std::ostringstream oss;
+        oss << "/sys/class/video4linux/video" << i << "/name";
+        std::string dev_sysfile = oss.str();
 
         std::ifstream ifs(dev_sysfile);
         if (ifs.fail()) {
@@ -93,11 +93,12 @@ int ExternalDevice::openVideoDev()
         std::getline(ifs, dev_name);
 
         if (dev_name == cis_dev_name) {
-            char dev_file[32];
-            sprintf(dev_file, "/dev/video%d", i);
+            oss = std::ostringstream{};
+            oss << "/dev/video" << i;
+            std::string dev_file = oss.str();
 
             // SCM provides two /dev/video --> must select the right one
-            fd_ = open(dev_file, O_RDWR | O_NONBLOCK);
+            fd_ = open(dev_file.c_str(), O_RDWR | O_NONBLOCK);
             if (fd_ < 0) {
                 return -1;
             }

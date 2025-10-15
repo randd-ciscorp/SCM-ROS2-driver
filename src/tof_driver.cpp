@@ -14,7 +14,6 @@
 
 #include "cis_scm/tof_driver.hpp"
 
-#include <camera_info_manager/camera_info_manager.hpp>
 #include <chrono>
 #include <memory>
 #include <string>
@@ -25,6 +24,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
+#include <camera_info_manager/camera_info_manager.hpp>
 
 #ifndef INTERNAL_DRIVER
 #include "cis_scm/Device.h"

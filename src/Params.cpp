@@ -18,19 +18,20 @@
 
 #include <cassert>
 #include <chrono>
-#include <cis_scm/Controls.hpp>
-#include <rcl_interfaces/msg/set_parameters_result.hpp>
+#include <string>
+#include <string_view>
+#include <type_traits>
+#include <vector>
+
 #include <rclcpp/callback_group.hpp>
 #include <rclcpp/create_timer.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/parameter.hpp>
 #include <rclcpp/parameter_value.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include <string>
-#include <string_view>
-#include <type_traits>
-#include <vector>
-#include "rcl_interfaces/msg/set_parameters_result.hpp"
+#include <rcl_interfaces/msg/set_parameters_result.hpp>
+
+#include <cis_scm/Controls.hpp>
 
 using namespace std::chrono_literals;
 
@@ -39,7 +40,7 @@ namespace cis_scm
 
 template <typename T>
 rcl_interfaces::msg::ParameterDescriptor ParamHandler::setParamDescriptor(
-    uint8_t param_type, T min, T max, T step)
+    uint8_t param_type, T min, T max)
 {
     rcl_interfaces::msg::ParameterDescriptor desc{};
     switch (param_type) {
@@ -112,7 +113,8 @@ void ParamHandler::setParam(
 template <typename T>
 rclcpp::Parameter ParamHandler::makeParamFromCtrlVal(std::string_view param_name, int ctrl_id)
 {
-    // Avoid triggering the callback add_on_set_parameters_callback, this avoid get-set-get-set infinite behavior
+    // Avoid triggering the callback add_on_set_parameters_callback,
+    // this avoid get-set-get-set infinite behavior
     ignore_set_param_cb_ = true;
     std::string param_name_str = std::string(param_name);
     T param_val;
@@ -156,38 +158,38 @@ RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node)
     declareParam(IspRosParams::ae_enable, true);
     declareParam(
         IspRosParams::integration_time, 0.3333,
-        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.000276, 0.3333, 0.000001));
+        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.000276, 0.3333));
     declareParam(
         IspRosParams::manual_gain, 1.0,
-        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 1.0, 16.0, 0.1));
+        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 1.0, 16.0));
 
     declareParam(IspRosParams::awb_enable, true);
     declareParam(
-        IspRosParams::awb_index, 0, setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 4, 1));
+        IspRosParams::awb_index, 0, setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 4));
 
     declareParam(
         IspRosParams::wb_cc_matrix, std::vector<double>{0., 0., 0., 0., 0., 0., 0., 0., 0.});
     declareParam(
         IspRosParams::wb_offset_r, 0,
-        setParamDescriptor(ParameterType::PARAMETER_INTEGER, -2048, 2047, 1));
+        setParamDescriptor(ParameterType::PARAMETER_INTEGER, -2048, 2047));
     declareParam(
         IspRosParams::wb_offset_g, 0,
-        setParamDescriptor(ParameterType::PARAMETER_INTEGER, -2048, 2047, 1));
+        setParamDescriptor(ParameterType::PARAMETER_INTEGER, -2048, 2047));
     declareParam(
         IspRosParams::wb_offset_b, 0,
-        setParamDescriptor(ParameterType::PARAMETER_INTEGER, -2048, 2047, 1));
+        setParamDescriptor(ParameterType::PARAMETER_INTEGER, -2048, 2047));
     declareParam(
         IspRosParams::wb_gain_r, 1.0,
-        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 1.0, 3.999, 0.01));
+        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 1.0, 3.999));
     declareParam(
         IspRosParams::wb_gain_gr, 1.0,
-        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 1.0, 3.999, 0.01));
+        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 1.0, 3.999));
     declareParam(
         IspRosParams::wb_gain_gb, 1.0,
-        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 1.0, 3.999, 0.01));
+        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 1.0, 3.999));
     declareParam(
         IspRosParams::wb_gain_b, 1.0,
-        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 1.0, 3.999, 0.01));
+        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 1.0, 3.999));
 
     declareParam(IspRosParams::dewarp_bypass, false);
 
@@ -196,17 +198,15 @@ RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node)
     declareParam(IspRosParams::denoising_prefilter, true);
 
     declareParam(
-        IspRosParams::bls_sub_r, 40,
-        setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1023, 1));
+        IspRosParams::bls_sub_r, 40, setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1023));
     declareParam(
         IspRosParams::bls_sub_gr, 40,
-        setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1023, 1));
+        setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1023));
     declareParam(
         IspRosParams::bls_sub_gb, 40,
-        setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1023, 1));
+        setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1023));
     declareParam(
-        IspRosParams::bls_sub_b, 40,
-        setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1023, 1));
+        IspRosParams::bls_sub_b, 40, setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1023));
 
     declareParam(IspRosParams::lsc_enable, false);
     declareParam(IspRosParams::hflip, false);
@@ -215,19 +215,19 @@ RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node)
     declareParam(IspRosParams::cproc_enable, false);
     declareParam(
         IspRosParams::cproc_color_space, 3,
-        setParamDescriptor(ParameterType::PARAMETER_INTEGER, 1, 4, 1));
+        setParamDescriptor(ParameterType::PARAMETER_INTEGER, 1, 4));
     declareParam(
         IspRosParams::cproc_brightness, -30,
-        setParamDescriptor(ParameterType::PARAMETER_INTEGER, -127, 127, 1));
+        setParamDescriptor(ParameterType::PARAMETER_INTEGER, -127, 127));
     declareParam(
         IspRosParams::cproc_contrast, 0.804688,
-        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 1.99, 0.000001));
+        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 1.99));
     declareParam(
         IspRosParams::cproc_saturation, 1.328125,
-        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 1.99, 0.000001));
+        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 1.99));
     declareParam(
         IspRosParams::cproc_hue, -17,
-        setParamDescriptor(ParameterType::PARAMETER_INTEGER, -90, 89, 1));
+        setParamDescriptor(ParameterType::PARAMETER_INTEGER, -90, 89));
 
     declareParam(IspRosParams::dpcc_enable, true);
 
@@ -264,22 +264,22 @@ ToFParamHandler::ToFParamHandler(std::shared_ptr<rclcpp::Node> node)
 
     declareParam(
         TofRosParams::histo_thresh, 17.5,
-        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 100.0, 17.5));
+        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 100.0));
     declareParam(
         TofRosParams::histo_length, 15,
-        setParamDescriptor(ParameterType::PARAMETER_INTEGER, 1, 100, 15));
+        setParamDescriptor(ParameterType::PARAMETER_INTEGER, 1, 100));
     declareParam(
         TofRosParams::min_reflect, 7.5,
-        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 50.0, 7.5));
+        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 50.0));
     declareParam(
         TofRosParams::min_confi, 20.0,
-        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 512.0, 20.0));
+        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 512.0));
     declareParam(
         TofRosParams::kill_flyind_delta, 0.03,
-        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 1.0, 0.03));
+        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 1.0));
     declareParam(
         TofRosParams::integr_time, 1000,
-        setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1000, 1000));
+        setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1000));
 
     params_cb_grp_ =
         driver_node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -437,7 +437,7 @@ void RGBParamHandler::updateControlsParams()
 {
     driver_node_->set_parameter(
         makeParamFromCtrlVal<bool>(IspRosParams::ae_enable, RGB_GET_AUTO_EXPOSURE_CONTROL));
-    // TODO: add AE controls
+    // TODO(leo): add AE controls
     driver_node_->set_parameter(
         makeParamFromCtrlVal<float>(IspRosParams::manual_gain, RGB_GET_MANUAL_GAIN));
     driver_node_->set_parameter(
@@ -451,8 +451,8 @@ void RGBParamHandler::updateControlsParams()
     driver_node_->set_parameter(
         makeParamFromCtrlVal<int>(IspRosParams::awb_index, RGB_GET_AUTO_WHITE_BALANCE_INDEX));
 
-    // TODO: Add AWB damping?
-    //driver_node_->set_parameter(makeParamFromCtrlVal<int>(IspRosPa
+    // TODO(leo): Add AWB damping?
+    // driver_node_->set_parameter(makeParamFromCtrlVal<int>(IspRosPa
     driver_node_->set_parameter(makeParamFromCtrlVal<float[cc_matrix_nb_elems]>(
         IspRosParams::wb_cc_matrix, RGB_GET_WHITE_BALANCE_CC_MATRIX));
     driver_node_->set_parameter(

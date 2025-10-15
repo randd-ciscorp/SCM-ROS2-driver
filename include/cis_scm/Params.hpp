@@ -17,17 +17,16 @@
 
 #include <memory>
 #include <optional>
-#include <rclcpp/callback_group.hpp>
-#include <rclcpp/parameter.hpp>
-#include <rclcpp/timer.hpp>
 #include <string_view>
 #include <vector>
 
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/callback_group.hpp>
+#include <rclcpp/parameter.hpp>
+#include <rclcpp/timer.hpp>
 #include <rcl_interfaces/msg/set_parameters_result.hpp>
 
 #include "cis_scm/Controls.hpp"
-#include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 namespace cis_scm
 {
@@ -94,8 +93,7 @@ class ParamHandler
 #endif
 
     template <typename T>
-    rcl_interfaces::msg::ParameterDescriptor setParamDescriptor(
-        uint8_t param_type, T min, T max, T step);
+    rcl_interfaces::msg::ParameterDescriptor setParamDescriptor(uint8_t param_type, T min, T max);
 
     template <typename T>
     void declareParam(

@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <cstdint>
 #include <vector>
+#include <string>
 
 #include <rclcpp/parameter_client.hpp>
 
@@ -214,6 +215,8 @@ class CameraCtrlExtern : public CameraCtrl
     int readCispVal(std::string & out_val, int ctrl, uint8_t byte_len);
 };
 
+#ifdef INTERNAL_DRIVER
+
 class CameraCtrlIntern : public CameraCtrl
 {
   public:
@@ -231,6 +234,7 @@ class CameraCtrlIntern : public CameraCtrl
     void setControlFloatArray(int ctrl, float * vals, int arr_len) override;
     int getControlFloatArray(int ctrl, std::vector<float> & r_vals, int arr_len) override;
 };
+#endif  // INTERNAL_DRIVER
 
 // class ToFControl
 

@@ -231,6 +231,9 @@ int CameraCtrlExtern::getControlFloatArray(int ctrl, std::vector<float> & r_vals
     }
     return -1;
 }
+
+#ifdef INTERNAL_DRIVER
+
 void CameraCtrlIntern::setControlInt(int ctrl, int val)
 {
     std::cout << "SU " << ctrl << " " << val << std::endl;
@@ -278,4 +281,5 @@ int CameraCtrlIntern::getControlFloatArray(int ctrl, std::vector<float> & r_vals
     std::cout << "GU " << ctrl << std::endl;
     return -1;
 }
+#endif  // INTERN_DRIVER
 }  // namespace cis_scm
