@@ -89,8 +89,7 @@ class ToFCVNode : public rclcpp::Node
     rclcpp::CallbackGroup::SharedPtr non_crit_cb_grp_;
 
     std::string topicPrefix_ = "camera/depth";
-    std::string cameraBaseFrame_ = "camera_base";
-    std::string depthCameraFrame_ = "depth_camera_link";
+    std::string cameraDepthFrame_ = "camera_depth_frame";
 
     virtual int initCap();
     void importParams();

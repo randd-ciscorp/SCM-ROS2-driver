@@ -28,20 +28,20 @@ def generate_launch_description():
             Node(
                 package='tf2_ros',
                 executable='static_transform_publisher',
-                name='camera_base_to_camera',
+                name='camera_base_to_camera_link',
                 arguments=[
                     '--z',
                     '0.03',
                     '--frame-id',
                     'camera_base',
                     '--child-frame-id',
-                    'camera',
+                    'camera_link',
                 ],
             ),
             Node(
                 package='tf2_ros',
                 executable='static_transform_publisher',
-                name='camera_to_cam_depth',
+                name='camera_link_to_camera_depth_frame',
                 arguments=[
                     '--x',
                     '0.001',
@@ -50,9 +50,9 @@ def generate_launch_description():
                     '--roll',
                     '-1.57',
                     '--frame-id',
-                    'camera',
+                    'camera_link',
                     '--child-frame-id',
-                    'cam_depth',
+                    'camera_depth_frame',
                 ],
             ),
         ]

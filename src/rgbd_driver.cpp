@@ -177,7 +177,7 @@ void RGBDNode::pubRGBImage(uint8_t * rgbdata)
 {
     // Msg header
     auto header = std_msgs::msg::Header();
-    header.frame_id = "camera";
+    header.frame_id = cameraColorFrame_;
     header.stamp = this->get_clock()->now();
 
     // 2D Image publishing
@@ -198,7 +198,7 @@ void RGBDNode::pubRGBDPtc(XYZRGBData & xyzrgbData)
     auto header = std_msgs::msg::Header();
     rclcpp::Time time;
     header.stamp = this->get_clock()->now();
-    header.frame_id = "cam_depth";
+    header.frame_id = cameraDepthFrame_;
     ptcMsg_.header = header;
     sensor_msgs::PointCloud2Iterator<float> iter_x(ptcMsg_, "x");
     sensor_msgs::PointCloud2Iterator<float> iter_y(ptcMsg_, "y");
@@ -250,7 +250,7 @@ void RGBDNode::RGBDCallback()
 
         // Cam Info
         auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());
-        infoMsg->header.frame_id = "cam_depth";
+        infoMsg->header.frame_id = cameraDepthFrame_;
         infoMsg->header.stamp = this->get_clock()->now();
         infoPub_->publish(*infoMsg);
 

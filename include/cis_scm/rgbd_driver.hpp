@@ -73,7 +73,7 @@ class RGBDNode : public ToFCVNode
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoRGBPub_;
     std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_rgb_;
 
-    std::string rgbCameraFrame_ = "rgb_camera_link";
+    std::string cameraColorFrame_ = "camera_color_frame";
 
     int initCap() override;
     void importRGBDParameters();

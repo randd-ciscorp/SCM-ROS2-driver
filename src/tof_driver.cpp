@@ -190,7 +190,7 @@ void ToFCVNode::pubDepthImage(float * data)
 
     // Msg header
     auto header = std_msgs::msg::Header();
-    header.frame_id = "cam_depth";
+    header.frame_id = cameraDepthFrame_;
     header.stamp = this->get_clock()->now();
 
     // 2D Image publishing
@@ -211,7 +211,7 @@ void ToFCVNode::pubDepthPtc(XYZData & data)
     auto header = std_msgs::msg::Header();
     rclcpp::Time time;
     header.stamp = this->get_clock()->now();
-    header.frame_id = "cam_depth";
+    header.frame_id = cameraDepthFrame_;
     ptcMsg_.header = header;
 
     sensor_msgs::PointCloud2Iterator<float> iter_x(ptcMsg_, "x");
@@ -252,7 +252,7 @@ void ToFCVNode::depthCallback()
         if (!cap_->getData(reinterpret_cast<uint8_t *>(frameData.data()))) {
             // Cam Info
             auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());
-            infoMsg->header.frame_id = "cam_depth";
+            infoMsg->header.frame_id = cameraDepthFrame_;
             infoMsg->header.stamp = this->get_clock()->now();
             infoPub_->publish(*infoMsg);
 

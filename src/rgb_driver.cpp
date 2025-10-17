@@ -146,7 +146,7 @@ void RGBNode::pubImage(uint8_t * data)
 {
     // Msg header
     auto header = std_msgs::msg::Header();
-    header.frame_id = "camera";
+    header.frame_id = cameraColorFrame_;
     header.stamp = this->get_clock()->now();
 
     // RGB image publishing
@@ -178,7 +178,7 @@ void RGBNode::imgCallback()
             cv::resize(imgData, imgData, cv::Size(width_, height_));
             // Cam Info
             auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());
-            infoMsg->header.frame_id = "cam_depth";
+            infoMsg->header.frame_id = cameraColorFrame_;
             infoMsg->header.stamp = this->get_clock()->now();
             infoPub_->publish(*infoMsg);
 
