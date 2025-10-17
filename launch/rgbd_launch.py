@@ -55,5 +55,24 @@ def generate_launch_description():
                     'camera_depth_frame',
                 ],
             ),
+            Node(
+                package='tf2_ros',
+                executable='static_transform_publisher',
+                name='camera_link_to_camera_color_frame',
+                arguments=[
+                    '--x',
+                    '0.001',
+                    '--y',
+                    '0.04',
+                    '--yaw',
+                    '-1.57',
+                    '--roll',
+                    '-1.57',
+                    '--frame-id',
+                    'camera_link',
+                    '--child-frame-id',
+                    'camera_color_frame',
+                ],
+            ),
         ]
     )
