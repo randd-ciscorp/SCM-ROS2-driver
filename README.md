@@ -1,10 +1,12 @@
 # SCM ROS 2 driver
 
+[![Main pipeline status](https://gitlab3.cis.local/imx/scm-ros2-driver/badges/main/pipeline.svg)](https://gitlab3.cis.local/imx/scm-ros2-driver/-/commits/main)
+
 ROS 2 driver node for CIS SCM camera series.
 
 ## Required system configurations
 
-- Host Linux PC
+- Host Linux PC/Robot
     - Supported OS / ROS distro
         - Ubuntu 22.04 / ROS 2 Humble
     - USB3.0 port
@@ -16,16 +18,20 @@ ROS 2 driver node for CIS SCM camera series.
 ## Topics
 
 ### SCM-ToF1
-- `/camera/depth/cam_info` --> Camera info (CameraInfo)
-- `/camera/depth/pcl_depth` --> 3D Depth Pointcloud (Pointcloud2)
-- `/camera/depth/img_depth` --> 2D Depth map (Image)
+- `depth/camera_info` --> Camera info (CameraInfo)
+- `depth/points` --> 3D point cloud (Pointcloud2)
+- `depth/image` --> 2D Depth map (Image)
 
 ### SCM-RGBD1
-- `/camera/depth/cam_info` --> Camera info (CameraInfo)
-- `/camera/depth/cam_rgb_info` --> Camera RGB info (CameraInfo)
-- `/camera/depth/pcl_depth` --> 3D Depth Pointcloud (Pointcloud2)
-- `/camera/depth/img_depth` --> 2D Depth map (Image)
-- `/camera/depth/img_rgb` --> 2D RGB image (Image)
+- `aligned_color_to_depth/camera_info` --> Aligned RGB camera info (CameraInfo)
+- `aligned_color_to_depth/image` --> Aligned RGB to depth data (Image)
+- `depth/camera_info` --> Depth camera info (CameraInfo)
+- `depth/image` --> 2D Depth map (Image)
+- `depth/points` --> 3D Colored point cloud (Pointcloud2)
+
+### SCM-2M1 / SCM-8M1
+- `color/camera_info` --> RGB camera info (CameraInfo)
+- `color/image` --> RGB image (Image)
 
 ## Quick Start
 
@@ -50,7 +56,7 @@ $ sudo apt install ros-humble-camera-info-manager
 
 ### Driver package building
 ``` bash
-$ git clone git@gitlab3.cis.local:leoboule/tof1-ros-driver.git ./src/
+$ git clone https://gitlab3.cis.local/imx/scm-ros2-driver.git ./src/
 $ source /opt/ros/humble/setup.bash
 $ colcon build
 ```
@@ -88,6 +94,19 @@ $ ros2 launch cis_scm rgbd_viz_launch.py
 ##### RGBD (no display)
 ``` bash
 $ ros2 launch cis_scm rgbd_launch.py
+```
+
+***
+
+#### SCM-2M1 / SCM-8M1
+##### RGB + Display
+``` bash
+$ ros2 launch cis_scm rgb_viz_launch.py
+```
+
+##### RGB (no display)
+``` bash
+$ ros2 launch cis_scm rgb_launch.py
 ```
 
 ### Stop node
