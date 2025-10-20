@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.3.0 2025-10-20
+### Features
+- [X] SCM-2M1 & SCM-8M1 ROS 2 driver (5ccafb26)
+- [X] Camera controls setting through ROS parameters and CIS protocol
+    - [X] CIS protocol setter (70bf9751)
+    - [X] CIS protocol getter (d56ec39d)
+    - [X] SCM RGB ROS 2 parameters (0d19b90f)
+    - [X] SCM-ToF1 ROS 2 parameters (4a998c8a)
+    - [ ] SCM controls and ROS 2 parameters on internal driver (WiP)
+
+
+- [X] Rviz configs for each camera (e3d2f994)
+- [X] CI gitlab pipeline (246684c4)
+- [X] Apache 2 License (1415c146)
+
+
+### Updates | Fixes
+- [X] Renamed topics and frames (5825e432) (f9746ce6)
+- [X] All camera intrinsic & extinsic default parameters (9eabdb98)
+- [ ] Internal driver (4e7c0f00)
+    - [X] Topic publishing from the SCM
+    - [ ] Messages transfer speed is slow (WiP)
+
 ## v0.2.1 2025-05-21
 ### Features
 - [X] RGBD driver version

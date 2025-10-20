@@ -12,33 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cis_scm/Device.h"
-
-#include <errno.h>
-#include <fcntl.h>
-#include <linux/videodev2.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <unistd.h>
-
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include <string>
+#include "cis_scm/InternalDevice.hpp"
 
 namespace cis_scm
 {
-
-Device::Device()
+namespace internal
 {
-    fd_ = -1;
-    buffers_ = nullptr;
+InternalDevice::InternalDevice()
+{
     bufInd_ = 0;
-    isStreamOn_ = false;
+    buffers_ = nullptr;
 }
 
-Device::~Device() {}
+InternalDevice::~InternalDevice() {}
 
-bool Device::isConnected() const { return isStreamOn_; }
+DevInfo InternalDevice::getInfo() const { return devInfo_; }
+}  // namespace internal
 }  // namespace cis_scm

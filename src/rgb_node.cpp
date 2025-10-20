@@ -18,32 +18,34 @@
 #include <rclcpp/executors/multi_threaded_executor.hpp>
 
 #include "cis_scm/Params.hpp"
-#include "cis_scm/tof_driver.hpp"
+#include "cis_scm/rgb_driver.hpp"
 
 int main(int argc, char * argv[])
 {
     rclcpp::NodeOptions options;
-    options.use_intra_process_comms(true);
+    options.allow_undeclared_parameters(true);
+    options.automatically_declare_parameters_from_overrides(true);
 
     rclcpp::init(argc, argv);
-    std::shared_ptr<cis_scm::ToFCVNode> tof_node =
-        std::make_shared<cis_scm::ToFCVNode>("tof_node", options);
+    std::shared_ptr<cis_scm::RGBNode> rgb_node =
+        std::make_shared<cis_scm::RGBNode>("rgb_node", options);
 #ifdef INTERNAL_DRIVER
-    tof_node->initPointCloudTransport();
+    rgb_node->initImageTransport();
 #endif
 
-    std::shared_ptr<cis_scm::ToFParamHandler> param_handler;
+    std::shared_ptr<cis_scm::RGBParamHandler> param_handler;
     try {
-        param_handler = std::make_shared<cis_scm::ToFParamHandler>(tof_node);
+        param_handler = std::make_shared<cis_scm::RGBParamHandler>(rgb_node);
     } catch (const std::exception & e) {
-        RCLCPP_ERROR(tof_node->get_logger(), "Camera control parameters are not active.");
+        RCLCPP_ERROR(rgb_node->get_logger(), "Camera control parameters are not active.");
     }
-    tof_node->start();
+    rgb_node->start();
 
     rclcpp::executors::MultiThreadedExecutor executor;
-    executor.add_node(tof_node);
+    executor.add_node(rgb_node);
 
     executor.spin();
     rclcpp::shutdown();
+
     return 0;
 }

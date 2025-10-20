@@ -26,7 +26,7 @@ def generate_launch_description():
         [
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
-                    shrd_pkg_prefix + '/launch' + '/rgbd_launch.py'
+                    shrd_pkg_prefix + '/launch' + '/rgb_launch.py'
                 )
             ),
             Node(
@@ -34,7 +34,7 @@ def generate_launch_description():
                 executable='rviz2',
                 name='rviz2',
                 output='screen',
-                arguments=['-d', shrd_pkg_prefix + '/config/rviz/scm_rgbd.rviz'],
+                arguments=['-d', shrd_pkg_prefix + '/config/rviz/scm_rgb.rviz'],
             ),
             Node(
                 package='tf2_ros',

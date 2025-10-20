@@ -12,33 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cis_scm/Device.h"
+#ifndef CIS_SCM__EXTERNALDEVICE_HPP_
+#define CIS_SCM__EXTERNALDEVICE_HPP_
 
-#include <errno.h>
-#include <fcntl.h>
-#include <linux/videodev2.h>
 #include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <unistd.h>
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include <string>
+#include "Device.h"
 
 namespace cis_scm
 {
 
-Device::Device()
+inline constexpr std::string_view cis_dev_name = "SCM Series: UVC Camera";
+
+class ExternalDevice : public Device
 {
-    fd_ = -1;
-    buffers_ = nullptr;
-    bufInd_ = 0;
-    isStreamOn_ = false;
-}
+  public:
+    ExternalDevice();
+    ~ExternalDevice();
 
-Device::~Device() {}
+    int connect(int width, int height);
+    void disconnect();
 
-bool Device::isConnected() const { return isStreamOn_; }
+    DevInfo getInfo() const;
+    int getData(uint8_t * data);
+
+  private:
+    void initMmap();
+    int openVideoDev();
+};
+
 }  // namespace cis_scm
+#endif  // CIS_SCM__EXTERNALDEVICE_HPP_

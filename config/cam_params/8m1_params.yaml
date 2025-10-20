@@ -1,0 +1,20 @@
+image_width: 3840
+image_height: 2160
+camera_name: scm-8m1
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [4196, 0, 1831, 0, 4196, 1090, 0, 0, 1]
+distortion_model: plumb_bob
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [-0.5476, 0.313, 0.0036, -0.0025, -0.1166]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1, 0, 0, 0, 1, 0, 0, 0, 1]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [4196, 0, 1831, 0, 0, 4196, 1090, 0, 0, 0, 1, 0]

@@ -8,10 +8,13 @@
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rcl_interfaces</depend>
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
   <depend>libopencv-dev</depend>
   <depend>camera_info_manager</depend>
+  <depend>image_transport</depend>
+  <depend>point_cloud_transport</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

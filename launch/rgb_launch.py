@@ -12,18 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
+from ament_index_python import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    config = os.path.join(
+        get_package_share_directory('cis_scm'), 'config', 'params.yaml'
+    )
+
     return LaunchDescription(
         [
             Node(
                 package='cis_scm',
                 namespace='cis_scm',
-                executable='tof_node',
-                name='tof_node',
+                executable='rgb_node',
+                name='rgb_node',
+                parameters=[
+                    config,
+                ],
             ),
             Node(
                 package='tf2_ros',
@@ -41,7 +51,7 @@ def generate_launch_description():
             Node(
                 package='tf2_ros',
                 executable='static_transform_publisher',
-                name='camera_link_to_camera_depth_frame',
+                name='camera_link_to_camera_color_frame',
                 arguments=[
                     '--x',
                     '0.001',
@@ -52,7 +62,7 @@ def generate_launch_description():
                     '--frame-id',
                     'camera_link',
                     '--child-frame-id',
-                    'camera_depth_frame',
+                    'camera_color_frame',
                 ],
             ),
         ]
