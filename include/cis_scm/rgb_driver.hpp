@@ -70,8 +70,8 @@ class RGBNode : public rclcpp::Node
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoPub_;
     std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
 
-    std::string topicPrefix_ = "camera/rgb";
     std::string cameraColorFrame_ = "camera_color_frame";
+    std::string topicRGBPrefix_ = "color/";
 
     int initCap();
     void importParams();

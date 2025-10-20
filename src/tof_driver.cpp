@@ -43,15 +43,18 @@ namespace cis_scm
 
 ToFCVNode::ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & node_options)
 : Node(node_name, node_options)
+
 {
     crit_cb_grp_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     non_crit_cb_grp_ = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
 
-    depthImgPub_ = create_publisher<sensor_msgs::msg::Image>(topicPrefix_ + "/img_depth", 10);
-    infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicPrefix_ + "/cam_info", 10);
+    depthImgPub_ = create_publisher<sensor_msgs::msg::Image>(topicDepthPrefix_ + "image", 10);
+    infoPub_ =
+        create_publisher<sensor_msgs::msg::CameraInfo>(topicDepthPrefix_ + "camera_info", 10);
 
 #ifndef INTERNAL_DRIVER
-    depthPCLPub_ = create_publisher<sensor_msgs::msg::PointCloud2>(topicPrefix_ + "/pcl_depth", 10);
+    depthPCLPub_ =
+        create_publisher<sensor_msgs::msg::PointCloud2>(topicDepthPrefix_ + "points", 10);
 #endif
 
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-tof1");

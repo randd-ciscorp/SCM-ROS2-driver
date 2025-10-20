@@ -74,6 +74,7 @@ class RGBDNode : public ToFCVNode
     std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_rgb_;
 
     std::string cameraColorFrame_ = "camera_color_frame";
+    std::string topicRGBPrefix_ = "aligned_color_to_depth/";
 
     int initCap() override;
     void importRGBDParameters();
