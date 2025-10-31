@@ -1,25 +1,28 @@
-#include "rclcpp/rclcpp.hpp"
-#include <sensor_msgs/msg/point_cloud2.hpp>
+/*
+ * This sample code extract planes and objects from a pointcloud.
+ * It it mainly based on ROS-industrial's "Building a Perception Pipeline" tutorial.
+ * https://industrial-training-master.readthedocs.io/en/humble/_source/session5/Building-a-Perception-Pipeline.html#building-a-perception-pipeline
+ *
+ */
+
+#include <string>
+#include <memory>
+
 #include <rclcpp/qos.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <tf2_ros/buffer.h>
 
-// PCL specific includes
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/transforms.hpp>
-
+// Using PCL functions
+#include <pcl/filters/crop_box.h>
+#include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
-#include <pcl/filters/passthrough.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/filters/extract_indices.h>
 #include <pcl/segmentation/extract_clusters.h>
-#include <pcl/filters/crop_box.h>
-#include <pcl/filters/statistical_outlier_removal.h>
-#include <tf2/convert.hpp>
-#include <tf2_ros/buffer.h>
-#include <tf2_eigen/tf2_eigen.hpp>
-#include <tf2/LinearMath/Quaternion.hpp>
-#include <pcl/segmentation/extract_polygonal_prism_data.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl_ros/transforms.hpp>
 
 class PerceptionNode : public rclcpp::Node
 {
@@ -79,7 +82,7 @@ class PerceptionNode : public rclcpp::Node
         cloud_topic = cloud_topic_param.as_string();
         world_frame = world_frame_param.as_string();
         camera_frame = camera_frame_param.as_string();
-        voxel_leaf_size = float(voxel_leaf_size_param.as_double());
+        voxel_leaf_size = static_cast<float>(voxel_leaf_size_param.as_double());
         x_filter_min = x_filter_min_param.as_double();
         x_filter_max = x_filter_max_param.as_double();
         y_filter_min = y_filter_min_param.as_double();
@@ -124,7 +127,6 @@ class PerceptionNode : public rclcpp::Node
             stransform = tf_buffer_->lookupTransform(
                 world_frame, recent_cloud->header.frame_id, tf2::TimePointZero,
                 tf2::durationFromSec(3));
-
         } catch (const tf2::TransformException & ex) {
             RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
         }
@@ -217,7 +219,7 @@ class PerceptionNode : public rclcpp::Node
 
     void update_parameters()
     {
-        voxel_leaf_size = float(this->get_parameter("voxel_leaf_size").as_double());
+        voxel_leaf_size = static_cast<float>(this->get_parameter("voxel_leaf_size").as_double());
         x_filter_min = this->get_parameter("x_filter_min").as_double();
         x_filter_max = this->get_parameter("x_filter_max").as_double();
         y_filter_min = this->get_parameter("y_filter_min").as_double();
