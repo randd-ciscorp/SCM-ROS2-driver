@@ -52,4 +52,4 @@ sudo apt install ros-<ROS_DISTRO>-pcl-ros
     rqt
     ```
 
-![sample application image]("images/pcl_sample_image.jpg")
+![sample application image](images/pcl_sample_image.jpg)
