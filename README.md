@@ -19,7 +19,7 @@ ROS 2 driver node for CIS SCM camera series.
 
 ### SCM-ToF1
 - `depth/camera_info` --> Camera info (CameraInfo)
-- `depth/points` --> 3D point cloud (Pointcloud2)
+- `depth/points` --> 3D point cloud (PointCloud2)
 - `depth/image` --> 2D Depth map (Image)
 
 ### SCM-RGBD1
@@ -27,7 +27,7 @@ ROS 2 driver node for CIS SCM camera series.
 - `aligned_color_to_depth/image` --> Aligned RGB to depth data (Image)
 - `depth/camera_info` --> Depth camera info (CameraInfo)
 - `depth/image` --> 2D Depth map (Image)
-- `depth/points` --> 3D Colored point cloud (Pointcloud2)
+- `depth/points` --> 3D Colored point cloud (PointCloud2)
 
 ### SCM-2M1 / SCM-8M1
 - `color/camera_info` --> RGB camera info (CameraInfo)
@@ -112,6 +112,10 @@ $ ros2 launch cis_scm rgb_launch.py
 ### Stop node
 
 Press `Ctrl + C` to stop the driver node.
+
+## Application sample
+
+You can find a sample code to know how to use published topics from SCM [here](/doc/pcl_sample_appli.md).
 
 ## Contact
 `@leoboule Léo Boulé, <leoboule@ciscorp.co.jp>` (Author)
