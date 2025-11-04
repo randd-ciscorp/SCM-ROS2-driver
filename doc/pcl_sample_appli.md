@@ -33,13 +33,23 @@ sudo apt install ros-<ROS_DISTRO>-pcl-ros
     colcon build
     source install/setup.bash
     ```
-2. Launch the sample application: 
+2. Launch the camera node + rviz:
+
+    ```bash
+    # SCM-ToF1
+    ros2 launch cis_scm tof_viz_launch.py
+
+    # SCM-RGBD1
+    ros2 launch cis_scm rgbd_viz_launch.py
+    ```
+3. Launch the sample application: 
     ```bash 
     ros2 launch cis_scm pcl_sample_launch.py
     ```
 
-3. *(Optional)* You can adjust processing parameters by opening another terminal and running:
+4. *(Optional)* You can adjust processing parameters by opening another terminal and running:
     ```bash
     rqt
     ```
 
+![sample application image]("images/pcl_sample_image.jpg")
