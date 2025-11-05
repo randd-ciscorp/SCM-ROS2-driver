@@ -77,13 +77,25 @@ else()
     install(TARGETS tof_node rgbd_node rgb_node DESTINATION lib/${PROJECT_NAME})
 endif()
 
+if(NOT SAMPLE_APPLI)
+    find_package(pcl_ros REQUIRED)
+    find_package(tf2_ros REQUIRED)
+    find_package(tf2_eigen REQUIRED)
+
+    add_executable(pcl_sample_node src/example/pcl_sample.cpp)
+    ament_target_dependencies(pcl_sample_node rclcpp tf2_ros tf2 tf2_eigen sensor_msgs pcl_ros)
+
+
+    install(TARGETS pcl_sample_node DESTINATION lib/${PROJECT_NAME})
+endif()
+
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING AND NOT INTERNAL_DRIVER)
   find_package(ament_lint_auto REQUIRED)
   list(APPEND AMENT_LINT_AUTO_EXCLUDE ament_cmake_uncrustify ament_uncrustify)
-  list(APPEND AMENT_LINT_AUTO_FILE_EXCLUDE "src/InternalDevices/*" "include/cis_scm/InternalDevice.hpp")
+  list(APPEND AMENT_LINT_AUTO_FILE_EXCLUDE "src/InternalDevices/*" "include/cis_scm/InternalDevice.hpp" "src/example/*")
   ament_lint_auto_find_test_dependencies()
 endif()
 
