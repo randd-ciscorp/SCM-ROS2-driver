@@ -100,6 +100,7 @@ They can be modified with
 4. Click on SCM's node in the left panel, node name might be located under `cis_scm`
 5. Adjust the desired parameter
 
-<p align="center">
+<div align="center">
+
     <img src="./images/rqt_scm.png" alt="Rqt image" width="500">
-</p>
+</div>
