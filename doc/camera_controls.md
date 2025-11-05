@@ -5,10 +5,10 @@ The controls are:
 - ISP controls (`SCM-2M1`, `SCM-8M1` and `SCM-RGBD1`)
 - ToF parameters (`SCM-ToF1` and `SCM-RGBD1`)
 
-:info: The camera controls value is based on CIS Procotol. 
+ℹ️ The camera controls value is based on CIS Procotol. 
 Please check the corresponding documentation for more details.
 
-:warning: `SCM-RGBD1` node does not handle parameters tuning yet. (WiP)
+⚠️ `SCM-RGBD1` node does not handle parameters tuning yet. (WiP)
 
 
 ## ISP
@@ -100,4 +100,4 @@ They can be modified with
 4. Click on SCM's node in the left panel, node name might be located under `cis_scm`
 5. Adjust the desired parameter
 
-![Rqt image](./images/rqt_scm.png)
+<img src="./images/rqt_scm.png" alt="Rqt image" width="300" align="center">
