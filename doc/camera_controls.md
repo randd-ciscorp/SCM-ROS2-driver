@@ -101,5 +101,5 @@ They can be modified with
 5. Adjust the desired parameter
 
 <p align="center">
-    <img src="./images/rqt_scm.png" alt="Rqt image" width="500" align="center">
+    <img src="./images/rqt_scm.png" alt="Rqt image" width="500">
 </p>
