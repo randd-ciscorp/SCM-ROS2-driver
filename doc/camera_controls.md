@@ -75,6 +75,8 @@ In order to make the white balance index switching simpler, the `isp.awb.index` 
 - History Threshold (deprecated)
 - History Length (deprecated)
 
+---
+
 ## Parameter tuning
 
 Parameters are declared and initialized by `ParamHandler` class, use in SCM nodes.
@@ -100,7 +102,4 @@ They can be modified with
 4. Click on SCM's node in the left panel, node name might be located under `cis_scm`
 5. Adjust the desired parameter
 
-<div align="center">
-
-    <img src="./images/rqt_scm.png" alt="Rqt image" width="500">
-</div>
+![Rqt image](./images/rqt_scm.png)
