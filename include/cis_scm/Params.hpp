@@ -86,11 +86,7 @@ class ParamHandler
 
     std::shared_ptr<rclcpp::Node> driver_node_;
 
-#ifndef INTERNAL_DRIVER
     std::unique_ptr<CameraCtrlExtern> cam_ctrl_;
-#else
-    std::unique_ptr<CameraCtrlIntern> cam_ctrl_;
-#endif
 
     template <typename T>
     rcl_interfaces::msg::ParameterDescriptor setParamDescriptor(uint8_t param_type, T min, T max);

@@ -146,12 +146,7 @@ rclcpp::Parameter ParamHandler::makeParamFromCtrlVal(std::string_view param_name
 RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node)
 {
     driver_node_ = node;
-
-#ifndef INTERNAL_DRIVER
     cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
-#else
-    cam_ctrl_ = std::make_unique<CameraCtrlIntern>();
-#endif
 
     using rcl_interfaces::msg::ParameterType;
 
@@ -253,12 +248,7 @@ RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node)
 ToFParamHandler::ToFParamHandler(std::shared_ptr<rclcpp::Node> node)
 {
     driver_node_ = node;
-
-#ifndef INTERNAL_DRIVER
     cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
-#else
-    cam_ctrl_ = std::make_unique<CameraCtrlIntern>();
-#endif
 
     using rcl_interfaces::msg::ParameterType;
 
@@ -453,8 +443,9 @@ void RGBParamHandler::updateControlsParams()
 
     // TODO(leo): Add AWB damping?
     // driver_node_->set_parameter(makeParamFromCtrlVal<int>(IspRosPa
-    driver_node_->set_parameter(makeParamFromCtrlVal<float[cc_matrix_nb_elems]>(
-        IspRosParams::wb_cc_matrix, RGB_GET_WHITE_BALANCE_CC_MATRIX));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<float[cc_matrix_nb_elems]>(
+            IspRosParams::wb_cc_matrix, RGB_GET_WHITE_BALANCE_CC_MATRIX));
     driver_node_->set_parameter(
         makeParamFromCtrlVal<int>(IspRosParams::wb_offset_r, RGB_GET_WHITE_BALANCE_OFFGET_R));
     driver_node_->set_parameter(
@@ -505,8 +496,9 @@ void RGBParamHandler::updateControlsParams()
         makeParamFromCtrlVal<float>(IspRosParams::cproc_saturation, RGB_GET_SATURATION));
     driver_node_->set_parameter(makeParamFromCtrlVal<int>(IspRosParams::cproc_hue, RGB_GET_HUE));
 
-    driver_node_->set_parameter(makeParamFromCtrlVal<int>(
-        IspRosParams::dpcc_enable, RGB_GET_DEFECT_PIXEL_CLUSTER_CORRECTION));
+    driver_node_->set_parameter(
+        makeParamFromCtrlVal<int>(
+            IspRosParams::dpcc_enable, RGB_GET_DEFECT_PIXEL_CLUSTER_CORRECTION));
 }
 
 rcl_interfaces::msg::SetParametersResult ToFParamHandler::setParamCB(

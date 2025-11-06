@@ -177,9 +177,7 @@ DevInfo ExternalDevice::getInfo() const
         errnoExit("Capability query");
     }
 
-    struct v4l2_format fmt
-    {
-    };
+    struct v4l2_format fmt{};
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (xioctl(fd_, VIDIOC_G_FMT, &fmt) < 0) {
         errnoExit("Get device format");
@@ -205,9 +203,7 @@ int ExternalDevice::getData(uint8_t * data)
     }
 
     if (FD_ISSET(fd_, &fds)) {
-        struct v4l2_buffer in_buf
-        {
-        };
+        struct v4l2_buffer in_buf{};
         in_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         in_buf.memory = V4L2_MEMORY_MMAP;
 

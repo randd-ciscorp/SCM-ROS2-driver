@@ -29,9 +29,6 @@ int main(int argc, char * argv[])
     rclcpp::init(argc, argv);
     std::shared_ptr<cis_scm::RGBNode> rgb_node =
         std::make_shared<cis_scm::RGBNode>("rgb_node", options);
-#ifdef INTERNAL_DRIVER
-    rgb_node->initImageTransport();
-#endif
 
     std::shared_ptr<cis_scm::RGBParamHandler> param_handler;
     try {

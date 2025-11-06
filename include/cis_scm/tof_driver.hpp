@@ -26,13 +26,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <camera_info_manager/camera_info_manager.hpp>
 
-#ifndef INTERNAL_DRIVER
 #include "cis_scm/ExternalDevice.hpp"
-#else
-#include <point_cloud_transport/point_cloud_transport.hpp>
-
-#include "cis_scm/InternalDevice.hpp"
-#endif
 
 #define MAX_DEPTH 7.5
 
@@ -46,16 +40,12 @@ struct XYZData
     std::vector<float> z;
 };
 
-class ToFCVNode : public rclcpp::Node
+class ToFNode : public rclcpp::Node
 {
   public:
-    ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
+    ToFNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
 
     virtual void start();
-
-#ifdef INTERNAL_DRIVER
-    void initPointCloudTransport();
-#endif
 
   protected:
     int width_;
@@ -70,13 +60,8 @@ class ToFCVNode : public rclcpp::Node
 
     rclcpp::TimerBase::SharedPtr timer_;
 
-#ifdef INTERNAL_DRIVER
-    point_cloud_transport::Publisher depthPCLPub_;
-    std::unique_ptr<internal::ToFInternalDevice> cap_;
-#else
     std::unique_ptr<ExternalDevice> cap_;
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> depthPCLPub_;
-#endif
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> depthImgPub_;
 
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoPub_;
