@@ -73,10 +73,6 @@ void ExternalDevice::initMmap()
     }
 }
 
-/**
-* @brief Find the video device created by SCM's uvc, and open id to fd_.
-* @return 0: SCM video dev found and opened  | -1: SCM video dev not found or opened. 
-*/
 int ExternalDevice::openVideoDev()
 {
     for (int i = 0; i < 10; i++) {

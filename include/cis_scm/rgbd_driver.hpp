@@ -31,6 +31,9 @@
 namespace cis_scm
 {
 
+/**
+ * @brief Combined 3D data structure with XYZ coordinates and RGB values. Also placeholder for ir data
+ */
 struct XYZRGBData
 {
     XYZData xyz;
@@ -38,6 +41,9 @@ struct XYZRGBData
     std::vector<uint8_t> ir;
 };
 
+/**
+ * @brief Single RGB-D pixel with spatial and color data.
+ */
 struct XYZRGBPixel
 {
     float x;
@@ -47,11 +53,25 @@ struct XYZRGBPixel
     uint8_t a;
 };
 
+/**
+ * @brief ROS2 node for SCM-RGBD1 device, combining Depth and RGB nodes
+ *
+ * Extends ToFNode to handle synchronized RGB and depth frames,
+ * producing aligned RGB-D images and point clouds.
+ */
 class RGBDNode : public ToFNode
 {
   public:
+    /**
+   * @brief Construct a new RGB-D node.
+   * @param node_name ROS node name.
+   * @param node_options Node options.
+   */
     RGBDNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
 
+    /**
+   * @brief Start the RGB-D capture and publication loop.
+   */
     void start() override;
 
   protected:
@@ -67,6 +87,10 @@ class RGBDNode : public ToFNode
     std::string cameraColorFrame_ = "camera_color_frame";
     std::string topicRGBPrefix_ = "aligned_color_to_depth/";
 
+    /**
+   * @brief Initialize the RGB-D capture device.
+   * @return 0 on success, negative on failure.
+   */
     int initCap() override;
     void importRGBDParameters();
 

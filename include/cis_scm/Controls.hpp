@@ -27,6 +27,9 @@ namespace cis_scm
 
 inline constexpr int cc_matrix_nb_elems = 9;
 
+/**
+ * @brief ToF control IDs for setting device parameters.
+ */
 enum tof_set_param
 {
     TOF_SET_HISTORY_THRESHOLD = 100,
@@ -37,6 +40,9 @@ enum tof_set_param
     TOF_SET_INTEGRATION_TIME = 105
 };
 
+/**
+ * @brief ToF control IDs for reading device parameters.
+ */
 enum tof_get_param
 {
     TOF_GET_HISTORY_THRESHOLD = 100,
@@ -47,6 +53,9 @@ enum tof_get_param
     TOF_GET_INTEGRATION_TIME = 105
 };
 
+/**
+ * @brief RGB ISP control IDs for setting device parameters.
+ */
 enum rgb_set_param
 {
     // AEC
@@ -109,6 +118,9 @@ enum rgb_set_param
     RGB_SET_DEFECT_PIXEL_CLUSTER_CORRECTION = 39
 };
 
+/**
+ * @brief RGB ISP control IDs for reading device parameters.
+ */
 enum rgb_get_param
 {
     // AEC
@@ -169,6 +181,9 @@ enum rgb_get_param
     RGB_GET_DEFECT_PIXEL_CLUSTER_CORRECTION = 39
 };
 
+/**
+ * @brief Abstract interface for camera control operations.
+ */
 class CameraCtrl
 {
   public:
@@ -187,6 +202,9 @@ class CameraCtrl
     virtual ~CameraCtrl() = default;
 };
 
+/**
+ * @brief External implementation of CameraCtrl using CIS protocol.
+ */
 class CameraCtrlExtern : public CameraCtrl
 {
   public:

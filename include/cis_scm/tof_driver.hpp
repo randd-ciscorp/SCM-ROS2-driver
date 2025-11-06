@@ -33,6 +33,9 @@
 namespace cis_scm
 {
 
+/**
+ * @brief Structure containing 3D coordinate arrays.
+ */
 struct XYZData
 {
     std::vector<float> x;
@@ -40,11 +43,25 @@ struct XYZData
     std::vector<float> z;
 };
 
+/**
+ * @brief ROS2 node for managing SCM-ToF1 (and SCM-RGBD1) device.
+ *
+ * Handles device initialization, frame acquisition, depth processing,
+ * and publishing of point cloud and depth image topics.
+ */
 class ToFNode : public rclcpp::Node
 {
   public:
+    /**
+   * @brief Construct a new ToF node.
+   * @param node_name ROS node name.
+   * @param node_options Node options.
+   */
     ToFNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
 
+    /**
+   * @brief Start the ToF capture and publishing loop.
+   */
     virtual void start();
 
   protected:
@@ -55,7 +72,6 @@ class ToFNode : public rclcpp::Node
 
     sensor_msgs::msg::PointCloud2 ptcMsg_;
     sensor_msgs::msg::Image imgMsg_;
-
     XYZData xyzData_;
 
     rclcpp::TimerBase::SharedPtr timer_;
@@ -75,13 +91,15 @@ class ToFNode : public rclcpp::Node
     std::string cameraDepthFrame_ = "camera_depth_frame";
     std::string topicDepthPrefix_ = "depth/";
 
+    /**
+   * @brief Initialize the ToF capture device.
+   * @return 0 on success, negative on failure.
+   */
     virtual int initCap();
+
     void importParams();
-
     XYZData splitXYZ(float * data);
-
     void dispInfo(DevInfo devInfo) const;
-
     void pubDepthImage(float * data);
     void pubDepthPtc(XYZData & data);
 

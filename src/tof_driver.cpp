@@ -106,7 +106,7 @@ void ToFNode::start()
         rclcpp::shutdown();
     }
 
-    if (cap_->isConnected()) {
+    if (cap_->isStreamOn()) {
         DevInfo devInfo = cap_->getInfo();
         dispInfo(devInfo);
         width_ = 640;
@@ -201,7 +201,7 @@ void ToFNode::depthCallback()
 
     std::vector<float> frameData = std::vector<float>(width_ * height_ * 3);
 
-    if (!cap_->isConnected()) {
+    if (!cap_->isStreamOn()) {
         RCLCPP_ERROR(get_logger(), "Camera connection lost or unavailable");
         rclcpp::sleep_for(std::chrono::seconds(3));
         RCLCPP_INFO(get_logger(), "New camera connection attempt");

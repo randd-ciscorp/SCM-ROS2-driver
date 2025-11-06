@@ -106,7 +106,7 @@ void RGBNode::start()
         rclcpp::shutdown();
     }
 
-    if (cap_->isConnected()) {
+    if (cap_->isStreamOn()) {
         DevInfo devInfo = cap_->getInfo();
         dispInfo(devInfo);
         width_ = devInfo.width;
@@ -141,7 +141,7 @@ void RGBNode::pubImage(uint8_t * data)
 
 void RGBNode::imgCallback()
 {
-    if (!cap_->isConnected()) {
+    if (!cap_->isStreamOn()) {
         RCLCPP_ERROR(get_logger(), "Camera connection lost or unavailable");
         rclcpp::sleep_for(std::chrono::seconds(3));
         RCLCPP_INFO(get_logger(), "New camera connection attempt");

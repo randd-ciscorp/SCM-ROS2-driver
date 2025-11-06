@@ -37,5 +37,5 @@ Device::Device()
 
 Device::~Device() {}
 
-bool Device::isConnected() const { return isStreamOn_; }
+bool Device::isStreamOn() const { return isStreamOn_; }
 }  // namespace cis_scm

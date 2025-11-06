@@ -112,7 +112,7 @@ void RGBDNode::start()
         rclcpp::shutdown();
     }
 
-    if (cap_->isConnected()) {
+    if (cap_->isStreamOn()) {
         DevInfo devInfo = cap_->getInfo();
         dispInfo(devInfo);
         width_ = devInfo.width;
@@ -225,7 +225,7 @@ void RGBDNode::RGBDCallback()
     xyzrgbData.rgb = std::vector<cv::Vec3b>(width_ * height_);
     xyzrgbData.ir = std::vector<uint8_t>(width_ * height_);
 
-    while (rclcpp::ok() && cap_->isConnected()) {
+    while (rclcpp::ok() && cap_->isStreamOn()) {
         if (cap_->getData(frameData_.data()) < 0) {
             cap_->disconnect();
             break;
