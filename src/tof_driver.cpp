@@ -181,15 +181,8 @@ XYZData ToFCVNode::splitXYZ(float * data)
 
 void ToFCVNode::pubDepthImage(float * data)
 {
-    greyDepth_ = cv::Mat(height_, width_, CV_32FC1, data);
-    greyDepth_.convertTo(greyDepth_, CV_8UC1, 255. / MAX_DEPTH);
-
-    // Grey -> Hue
-    hueDepth_ = cv::Mat(height_, width_, CV_8UC3);
-    cv::applyColorMap(greyDepth_, hueDepth_, cv::COLORMAP_JET);
-    if (!hueDepth_.isContinuous()) {
-        printf("NOT CONTINOUS");
-    }
+    depthMap_ = cv::Mat(height_, width_, CV_32FC1, data);
+    depthMap_.convertTo(depthMap_, CV_8UC1, 255. / MAX_DEPTH);
 
     // Msg header
     auto header = std_msgs::msg::Header();
@@ -201,10 +194,10 @@ void ToFCVNode::pubDepthImage(float * data)
     imgMsg_.header = header;
     imgMsg_.width = width_;
     imgMsg_.height = height_;
-    imgMsg_.encoding = sensor_msgs::image_encodings::TYPE_8UC3;
-    imgMsg_.step = width_ * sizeof(uchar) * 3;
+    imgMsg_.encoding = sensor_msgs::image_encodings::TYPE_8UC1;
+    imgMsg_.step = width_ * sizeof(uchar);
     imgMsg_.is_bigendian = true;
-    imgMsg_.data.assign(hueDepth_.data, hueDepth_.data + hueDepth_.rows * hueDepth_.cols * 3);
+    imgMsg_.data.assign(depthMap_.data, depthMap_.data + depthMap_.rows * depthMap_.cols);
     depthImgPub_->publish(std::move(imgMsg_));
 }
 

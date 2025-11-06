@@ -61,8 +61,7 @@ class ToFCVNode : public rclcpp::Node
     int width_;
     int height_;
 
-    cv::Mat greyDepth_;
-    cv::Mat hueDepth_;
+    cv::Mat depthMap_;
 
     sensor_msgs::msg::PointCloud2 ptcMsg_;
     sensor_msgs::msg::Image imgMsg_;
