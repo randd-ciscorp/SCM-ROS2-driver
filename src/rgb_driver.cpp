@@ -86,6 +86,7 @@ int RGBNode::initCap()
         RCLCPP_INFO(get_logger(), "Camera connected");
     } else {
         RCLCPP_ERROR(get_logger(), "Camera connection failed");
+        return -1;
     }
     return 0;
 }
