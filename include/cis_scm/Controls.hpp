@@ -214,46 +214,5 @@ class CameraCtrlExtern : public CameraCtrl
 
     int readCispVal(std::string & out_val, int ctrl, uint8_t byte_len);
 };
-
-#ifdef INTERNAL_DRIVER
-
-class CameraCtrlIntern : public CameraCtrl
-{
-  public:
-    CameraCtrlIntern() {}
-
-    void setControlInt(int ctrl, int val) override;
-    int getControlInt(int ctrl, int & r_val) override;
-
-    void setControlFloat(int ctrl, float val) override;
-    int getControlFloat(int ctrl, float & r_val) override;
-
-    void setControlBool(int ctrl, bool val) override;
-    int getControlBool(int ctrl, bool & r_val) override;
-
-    void setControlFloatArray(int ctrl, float * vals, int arr_len) override;
-    int getControlFloatArray(int ctrl, std::vector<float> & r_vals, int arr_len) override;
-};
-#endif  // INTERNAL_DRIVER
-
-// class ToFControl
-
-// class CameraCtrlToF : CameraCtrl
-// {
-// public:
-//     void setHistoryThreshold(float val);
-//     void setHistoryLength(int val);
-//     void setMinReflectance(float val);
-//     void setMinConfidence(float val);
-//     void setKillFlyingDelta(float val);
-//     void setIntegrationTime(int val);
-
-//     float getHistoryThreshold();
-//     int getHistoryLength();
-//     float getMinReflectance();
-//     float getMinConfidence();
-//     float getKillFlyingDelta();
-//     int getIntegrationTime();
-// };
 }  // namespace cis_scm
 #endif  // CIS_SCM__CONTROLS_HPP_

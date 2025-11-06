@@ -28,9 +28,6 @@ int main(int argc, char * argv[])
     rclcpp::init(argc, argv);
     std::shared_ptr<cis_scm::ToFCVNode> tof_node =
         std::make_shared<cis_scm::ToFCVNode>("tof_node", options);
-#ifdef INTERNAL_DRIVER
-    tof_node->initPointCloudTransport();
-#endif
 
     std::shared_ptr<cis_scm::ToFParamHandler> param_handler;
     try {

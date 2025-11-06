@@ -14,7 +14,6 @@
 
 #include "cis_scm/Device.h"
 
-#include <errno.h>
 #include <fcntl.h>
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>
@@ -24,8 +23,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <iostream>
-#include <string>
 
 namespace cis_scm
 {

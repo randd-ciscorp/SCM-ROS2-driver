@@ -24,13 +24,7 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <camera_info_manager/camera_info_manager.hpp>
 
-#ifndef INTERNAL_DRIVER
 #include "cis_scm/ExternalDevice.hpp"
-#else
-#include <image_transport/image_transport.hpp>
-
-#include "cis_scm/InternalDevice.hpp"
-#endif
 
 namespace cis_scm
 {
@@ -39,10 +33,6 @@ class RGBNode : public rclcpp::Node
 {
   public:
     RGBNode(const std::string node_name, const rclcpp::NodeOptions & get_node_options);
-
-#ifdef INTERNAL_DRIVER
-    void initImageTransport();
-#endif
 
     void start();
 
@@ -58,14 +48,8 @@ class RGBNode : public rclcpp::Node
 
     rclcpp::TimerBase::SharedPtr timer_;
 
-#ifdef INTERNAL_DRIVER
-    std::unique_ptr<internal::RGBInternalDevice> cap_;
-    std::shared_ptr<image_transport::ImageTransport> it_;
-    image_transport::Publisher imgPub_;
-#else
     std::unique_ptr<ExternalDevice> cap_;
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> imgPub_;
-#endif
 
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoPub_;
     std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;

@@ -26,11 +26,6 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <camera_info_manager/camera_info_manager.hpp>
 
-#ifndef INTERNAL_DRIVER
-#include "cis_scm/Device.h"
-#else
-#include "cis_scm/InternalDevice.hpp"
-#endif
 #include "cis_scm/tof_driver.hpp"
 
 namespace cis_scm
@@ -64,10 +59,6 @@ class RGBDNode : public ToFCVNode
 
     sensor_msgs::msg::Image imgRGBMsg_;
     bool isPCLNoColor_;
-
-#ifdef INTERNAL_DRIVER
-    std::unique_ptr<internal::RGBDInternalDevice> cap_;
-#endif
 
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> rgbImgPub_;
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoRGBPub_;
