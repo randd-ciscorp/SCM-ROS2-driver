@@ -33,7 +33,7 @@ using namespace std::chrono_literals;
 namespace cis_scm
 {
 
-ToFCVNode::ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & node_options)
+ToFNode::ToFNode(const std::string node_name, const rclcpp::NodeOptions & node_options)
 : Node(node_name, node_options)
 
 {
@@ -52,7 +52,7 @@ ToFCVNode::ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & no
     importParams();
 }
 
-int ToFCVNode::initCap()
+int ToFNode::initCap()
 {
     cap_ = std::make_unique<ExternalDevice>();
     if (!cap_->connect(480, 640)) {
@@ -63,7 +63,7 @@ int ToFCVNode::initCap()
     return 0;
 }
 
-void ToFCVNode::dispInfo(DevInfo devInfo) const
+void ToFNode::dispInfo(DevInfo devInfo) const
 {
     RCLCPP_INFO(get_logger(), "Device name: %s", devInfo.devName.c_str());
     RCLCPP_INFO(get_logger(), "Driver version: %s", devInfo.driverVers.c_str());
@@ -72,7 +72,7 @@ void ToFCVNode::dispInfo(DevInfo devInfo) const
     RCLCPP_INFO(get_logger(), "Height: %d", devInfo.height);
 }
 
-void ToFCVNode::importParams()
+void ToFNode::importParams()
 {
     // Cam params
     if (!this->has_parameter("tof_camera_params")) {
@@ -99,7 +99,7 @@ void ToFCVNode::importParams()
     }
 }
 
-void ToFCVNode::start()
+void ToFNode::start()
 {
     if (initCap()) {
         RCLCPP_ERROR(get_logger(), "Camera initialization failed");
@@ -122,14 +122,14 @@ void ToFCVNode::start()
 
         RCLCPP_INFO(get_logger(), "Start capturing");
         timer_ = this->create_wall_timer(
-            66.666ms, std::bind(&ToFCVNode::depthCallback, this), crit_cb_grp_);
+            66.666ms, std::bind(&ToFNode::depthCallback, this), crit_cb_grp_);
     } else {
         RCLCPP_ERROR(get_logger(), "Camera connection failed");
         rclcpp::shutdown();
     }
 }
 
-XYZData ToFCVNode::splitXYZ(float * data)
+XYZData ToFNode::splitXYZ(float * data)
 {
     int size = width_ * height_;
     XYZData output;
@@ -144,7 +144,7 @@ XYZData ToFCVNode::splitXYZ(float * data)
     return output;
 }
 
-void ToFCVNode::pubDepthImage(float * data)
+void ToFNode::pubDepthImage(float * data)
 {
     depthMap_ = cv::Mat(height_, width_, CV_32FC1, data);
     depthMap_.convertTo(depthMap_, CV_8UC1, 255. / MAX_DEPTH);
@@ -166,7 +166,7 @@ void ToFCVNode::pubDepthImage(float * data)
     depthImgPub_->publish(std::move(imgMsg_));
 }
 
-void ToFCVNode::pubDepthPtc(XYZData & data)
+void ToFNode::pubDepthPtc(XYZData & data)
 {
     // Header
     auto header = std_msgs::msg::Header();
@@ -195,7 +195,7 @@ void ToFCVNode::pubDepthPtc(XYZData & data)
     depthPCLPub_->publish(ptcMsg_);
 }
 
-void ToFCVNode::depthCallback()
+void ToFNode::depthCallback()
 {
     // Init 2D Mats
 

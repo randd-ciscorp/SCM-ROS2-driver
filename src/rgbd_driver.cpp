@@ -31,7 +31,7 @@ using namespace std::chrono_literals;
 namespace cis_scm
 {
 RGBDNode::RGBDNode(const std::string node_name, const rclcpp::NodeOptions & node_options)
-: ToFCVNode(node_name, node_options)
+: ToFNode(node_name, node_options)
 {
     rgbImgPub_ = create_publisher<sensor_msgs::msg::Image>(topicRGBPrefix_ + "image", 10);
     infoRGBPub_ =

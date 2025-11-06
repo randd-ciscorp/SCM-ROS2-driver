@@ -47,7 +47,7 @@ struct XYZRGBPixel
     uint8_t a;
 };
 
-class RGBDNode : public ToFCVNode
+class RGBDNode : public ToFNode
 {
   public:
     RGBDNode(const std::string node_name, const rclcpp::NodeOptions & node_options);

@@ -26,8 +26,8 @@ int main(int argc, char * argv[])
     options.use_intra_process_comms(true);
 
     rclcpp::init(argc, argv);
-    std::shared_ptr<cis_scm::ToFCVNode> tof_node =
-        std::make_shared<cis_scm::ToFCVNode>("tof_node", options);
+    std::shared_ptr<cis_scm::ToFNode> tof_node =
+        std::make_shared<cis_scm::ToFNode>("tof_node", options);
 
     std::shared_ptr<cis_scm::ToFParamHandler> param_handler;
     try {

@@ -40,10 +40,10 @@ struct XYZData
     std::vector<float> z;
 };
 
-class ToFCVNode : public rclcpp::Node
+class ToFNode : public rclcpp::Node
 {
   public:
-    ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
+    ToFNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
 
     virtual void start();
 
