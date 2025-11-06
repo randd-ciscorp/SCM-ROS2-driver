@@ -58,10 +58,10 @@ endif()
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 install(DIRECTORY config DESTINATION share/${PROJECT_NAME})
 
-if(BUILD_TESTING AND NOT INTERNAL_DRIVER)
+if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   list(APPEND AMENT_LINT_AUTO_EXCLUDE ament_cmake_uncrustify ament_uncrustify)
-  list(APPEND AMENT_LINT_AUTO_FILE_EXCLUDE "src/InternalDevices/*" "include/cis_scm/InternalDevice.hpp" "src/example/*")
+  list(APPEND AMENT_LINT_AUTO_FILE_EXCLUDE "src/example/*")
   ament_lint_auto_find_test_dependencies()
 endif()
 
