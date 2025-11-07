@@ -24,18 +24,14 @@
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <camera_info_manager/camera_info_manager.hpp>
 
-#ifndef INTERNAL_DRIVER
 #include "cis_scm/Device.h"
-#else
-#include "cis_scm/InternalDevice.hpp"
-#endif
 
 using namespace std::chrono_literals;
 
 namespace cis_scm
 {
 RGBDNode::RGBDNode(const std::string node_name, const rclcpp::NodeOptions & node_options)
-: ToFCVNode(node_name, node_options)
+: ToFNode(node_name, node_options)
 {
     rgbImgPub_ = create_publisher<sensor_msgs::msg::Image>(topicRGBPrefix_ + "image", 10);
     infoRGBPub_ =
@@ -49,20 +45,12 @@ RGBDNode::RGBDNode(const std::string node_name, const rclcpp::NodeOptions & node
 
 int RGBDNode::initCap()
 {
-#ifndef INTERNAL_DRIVER
-    RCLCPP_INFO(get_logger(), "EXTERNAL DRIVERRRR");
     cap_ = std::make_unique<ExternalDevice>();
-    if (!cap_->connect(480, 640))
-#else
-    RCLCPP_INFO(get_logger(), "INTERNAL DRIVERRRR");
-    cap_ = std::make_unique<internal::RGBDInternalDevice>(
-        this->get_parameter("tof_params_path").as_string(), this->get_parameter("align").as_bool());
-    if (!cap_->connect())
-#endif
-    {
+    if (!cap_->connect(480, 640)) {
         RCLCPP_INFO(get_logger(), "Camera connected");
     } else {
         RCLCPP_ERROR(get_logger(), "Camera connection failed");
+        return -1;
     }
 
     return 0;
@@ -125,7 +113,7 @@ void RGBDNode::start()
         rclcpp::shutdown();
     }
 
-    if (cap_->isConnected()) {
+    if (cap_->isStreamOn()) {
         DevInfo devInfo = cap_->getInfo();
         dispInfo(devInfo);
         width_ = devInfo.width;
@@ -225,11 +213,7 @@ void RGBDNode::pubRGBDPtc(XYZRGBData & xyzrgbData)
             iter_rgb[2] = xyzrgbData.rgb[i][2];
         }
     }
-#ifdef INTERNAL_DRIVER
-    depthPCLPub_.publish(ptcMsg_);
-#else
     depthPCLPub_->publish(ptcMsg_);
-#endif
 }
 
 void RGBDNode::RGBDCallback()
@@ -242,7 +226,7 @@ void RGBDNode::RGBDCallback()
     xyzrgbData.rgb = std::vector<cv::Vec3b>(width_ * height_);
     xyzrgbData.ir = std::vector<uint8_t>(width_ * height_);
 
-    while (rclcpp::ok() && cap_->isConnected()) {
+    while (rclcpp::ok() && cap_->isStreamOn()) {
         if (cap_->getData(frameData_.data()) < 0) {
             cap_->disconnect();
             break;

@@ -24,20 +24,44 @@ namespace cis_scm
 
 inline constexpr std::string_view cis_dev_name = "SCM Series: UVC Camera";
 
+/**
+ * @brief Implementation of Device for external (through UVC) capture
+ */
 class ExternalDevice : public Device
 {
   public:
     ExternalDevice();
     ~ExternalDevice();
 
+    /**
+   * @brief Connect to the external device and configure resolution.
+   * @param width Frame width in pixels.
+   * @param height Frame height in pixels.
+   * @return 0 on success, errno-compatible error code on failure.
+   */
     int connect(int width, int height);
+
+    /**
+   * @brief Disconnect and release all resources.
+   */
     void disconnect();
 
+    /**
+   * @brief Get current device information.
+   */
     DevInfo getInfo() const;
+
+    /**
+   * @brief Retrieve one frame of data from the device.
+   */
     int getData(uint8_t * data);
 
   private:
     void initMmap();
+    /**
+    * @brief Find the video device created by SCM's uvc, and open id to fd_.
+    * @return 0: SCM video dev found and opened  | -1: SCM video dev not found or opened. 
+    */
     int openVideoDev();
 };
 

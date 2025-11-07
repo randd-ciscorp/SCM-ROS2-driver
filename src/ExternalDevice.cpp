@@ -73,10 +73,6 @@ void ExternalDevice::initMmap()
     }
 }
 
-/**
-* @brief Find the video device created by SCM's uvc, and open id to fd_.
-* @return 0: SCM video dev found and opened  | -1: SCM video dev not found or opened. 
-*/
 int ExternalDevice::openVideoDev()
 {
     for (int i = 0; i < 10; i++) {
@@ -177,9 +173,7 @@ DevInfo ExternalDevice::getInfo() const
         errnoExit("Capability query");
     }
 
-    struct v4l2_format fmt
-    {
-    };
+    struct v4l2_format fmt{};
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (xioctl(fd_, VIDIOC_G_FMT, &fmt) < 0) {
         errnoExit("Get device format");
@@ -205,9 +199,7 @@ int ExternalDevice::getData(uint8_t * data)
     }
 
     if (FD_ISSET(fd_, &fds)) {
-        struct v4l2_buffer in_buf
-        {
-        };
+        struct v4l2_buffer in_buf{};
         in_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         in_buf.memory = V4L2_MEMORY_MMAP;
 

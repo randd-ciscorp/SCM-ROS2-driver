@@ -18,7 +18,6 @@
 #include <sys/types.h>
 #include <termio.h>
 #include <unistd.h>
-#include <algorithm>
 #include <cctype>
 #include <cstddef>
 #include <cstdint>
@@ -231,55 +230,4 @@ int CameraCtrlExtern::getControlFloatArray(int ctrl, std::vector<float> & r_vals
     }
     return -1;
 }
-
-#ifdef INTERNAL_DRIVER
-
-void CameraCtrlIntern::setControlInt(int ctrl, int val)
-{
-    std::cout << "SU " << ctrl << " " << val << std::endl;
-}
-
-void CameraCtrlIntern::setControlFloat(int ctrl, float val)
-{
-    std::cout << "SU " << ctrl << " " << val << std::endl;
-}
-
-void CameraCtrlIntern::setControlBool(int ctrl, bool val)
-{
-    std::cout << "SU " << ctrl << " " << val << std::endl;
-}
-
-void CameraCtrlIntern::setControlFloatArray(int ctrl, float * vals, int arr_len)
-{
-    std::cout << "SU " << ctrl << " " << vals[0] << std::endl;
-}
-
-int CameraCtrlIntern::getControlInt(int ctrl, int & r_val)
-{
-    int ret_val = 0;
-    std::cout << "GU " << ctrl << std::endl;
-    return ret_val;
-}
-
-int CameraCtrlIntern::getControlFloat(int ctrl, float & r_val)
-{
-    float ret_val = 0.;
-    std::cout << "GU " << ctrl << std::endl;
-    return ret_val;
-}
-
-int CameraCtrlIntern::getControlBool(int ctrl, bool & r_val)
-{
-    bool ret_val = 0.;
-    std::cout << "GU " << ctrl << std::endl;
-    return ret_val;
-}
-
-int CameraCtrlIntern::getControlFloatArray(int ctrl, std::vector<float> & r_vals, int arr_len)
-{
-    std::vector<float> ret_vals(arr_len);
-    std::cout << "GU " << ctrl << std::endl;
-    return -1;
-}
-#endif  // INTERN_DRIVER
 }  // namespace cis_scm

@@ -24,26 +24,30 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <camera_info_manager/camera_info_manager.hpp>
 
-#ifndef INTERNAL_DRIVER
 #include "cis_scm/ExternalDevice.hpp"
-#else
-#include <image_transport/image_transport.hpp>
-
-#include "cis_scm/InternalDevice.hpp"
-#endif
 
 namespace cis_scm
 {
 
+/**
+ * @brief ROS2 node for managing SCM RGB devices.
+ *
+ * Handles device initialization, frame acquisition,
+ * and publishing of color images and camera info topics
+ */
 class RGBNode : public rclcpp::Node
 {
   public:
+    /**
+   * @brief Construct a new RGB node.
+   * @param node_name ROS node name.
+   * @param node_options Node options.
+   */
     RGBNode(const std::string node_name, const rclcpp::NodeOptions & get_node_options);
 
-#ifdef INTERNAL_DRIVER
-    void initImageTransport();
-#endif
-
+    /**
+    * Start image acquisition and publishing
+    * */
     void start();
 
   private:
@@ -58,14 +62,8 @@ class RGBNode : public rclcpp::Node
 
     rclcpp::TimerBase::SharedPtr timer_;
 
-#ifdef INTERNAL_DRIVER
-    std::unique_ptr<internal::RGBInternalDevice> cap_;
-    std::shared_ptr<image_transport::ImageTransport> it_;
-    image_transport::Publisher imgPub_;
-#else
     std::unique_ptr<ExternalDevice> cap_;
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> imgPub_;
-#endif
 
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoPub_;
     std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
@@ -73,6 +71,10 @@ class RGBNode : public rclcpp::Node
     std::string cameraColorFrame_ = "camera_color_frame";
     std::string topicRGBPrefix_ = "color/";
 
+    /**
+   * @brief Initialize the RGB capture device.
+   * @return 0 on success, negative on failure.
+   */
     int initCap();
     void importParams();
     void dispInfo(DevInfo devInfo) const;

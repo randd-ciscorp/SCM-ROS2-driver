@@ -15,6 +15,7 @@ Build:
         - source /opt/ros/$ROS_DISTRO/setup.bash
         - cd $CI_BUILDS_DIR/ros2_ws
         - rosdep install --from-paths src -y
+        - apt install ros-humble-pcl-ros -y
         - colcon build
     artifacts:
         paths:

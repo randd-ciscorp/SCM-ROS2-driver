@@ -26,19 +26,16 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <camera_info_manager/camera_info_manager.hpp>
 
-#ifndef INTERNAL_DRIVER
 #include "cis_scm/ExternalDevice.hpp"
-#else
-#include <point_cloud_transport/point_cloud_transport.hpp>
-
-#include "cis_scm/InternalDevice.hpp"
-#endif
 
 #define MAX_DEPTH 7.5
 
 namespace cis_scm
 {
 
+/**
+ * @brief Structure containing 3D coordinate arrays.
+ */
 struct XYZData
 {
     std::vector<float> x;
@@ -46,38 +43,41 @@ struct XYZData
     std::vector<float> z;
 };
 
-class ToFCVNode : public rclcpp::Node
+/**
+ * @brief ROS2 node for managing SCM-ToF1 (and SCM-RGBD1) device.
+ *
+ * Handles device initialization, frame acquisition, depth processing,
+ * and publishing of point cloud and depth image topics.
+ */
+class ToFNode : public rclcpp::Node
 {
   public:
-    ToFCVNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
+    /**
+   * @brief Construct a new ToF node.
+   * @param node_name ROS node name.
+   * @param node_options Node options.
+   */
+    ToFNode(const std::string node_name, const rclcpp::NodeOptions & node_options);
 
+    /**
+   * @brief Start the ToF capture and publishing loop.
+   */
     virtual void start();
-
-#ifdef INTERNAL_DRIVER
-    void initPointCloudTransport();
-#endif
 
   protected:
     int width_;
     int height_;
 
-    cv::Mat greyDepth_;
-    cv::Mat hueDepth_;
+    cv::Mat depthMap_;
 
     sensor_msgs::msg::PointCloud2 ptcMsg_;
     sensor_msgs::msg::Image imgMsg_;
-
     XYZData xyzData_;
 
     rclcpp::TimerBase::SharedPtr timer_;
 
-#ifdef INTERNAL_DRIVER
-    point_cloud_transport::Publisher depthPCLPub_;
-    std::unique_ptr<internal::ToFInternalDevice> cap_;
-#else
     std::unique_ptr<ExternalDevice> cap_;
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>> depthPCLPub_;
-#endif
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> depthImgPub_;
 
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoPub_;
@@ -91,13 +91,15 @@ class ToFCVNode : public rclcpp::Node
     std::string cameraDepthFrame_ = "camera_depth_frame";
     std::string topicDepthPrefix_ = "depth/";
 
+    /**
+   * @brief Initialize the ToF capture device.
+   * @return 0 on success, negative on failure.
+   */
     virtual int initCap();
+
     void importParams();
-
     XYZData splitXYZ(float * data);
-
     void dispInfo(DevInfo devInfo) const;
-
     void pubDepthImage(float * data);
     void pubDepthPtc(XYZData & data);
 

@@ -61,12 +61,18 @@ inline int errnoPrint(const char * s)
     return errno;
 }
 
+/**
+ * @brief Basic memory buffer descriptor used for streaming I/O.
+ */
 struct RequestBuffer
 {
     void * data;
     size_t length;
 };
 
+/**
+ * @brief Device metadata and frame resolution.
+ */
 struct DevInfo
 {
     std::string devName;
@@ -77,6 +83,12 @@ struct DevInfo
     int height;
 };
 
+/**
+ * @brief Abstract base class for hardware capture devices.
+ *
+ * Defines the minimal interface for device information and data retrieval.
+ * Implementations handle initialization, streaming, and I/O.
+ */
 class Device
 {
   protected:
@@ -85,8 +97,18 @@ class Device
 
   public:
     virtual DevInfo getInfo() const = 0;
+
+    /**
+   * @brief Get a data frame from the device.
+   * @param data Destination buffer.
+   * @return 0 on success or an error code.
+   */
     virtual int getData(uint8_t * data) = 0;
-    bool isConnected() const;
+
+    /**
+   * @brief Check if device stream is currently on
+   */
+    bool isStreamOn() const;
 
   protected:
     DevInfo devInfo_;

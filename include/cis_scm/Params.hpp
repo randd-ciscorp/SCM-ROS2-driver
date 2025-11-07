@@ -76,6 +76,9 @@ inline constexpr std::string_view kill_flyind_delta = "tof.kill flying delta";
 inline constexpr std::string_view integr_time = "tof.integration time";
 }  // namespace TofRosParams
 
+/**
+ * @brief Base class for ROS parameter handling with camera controls.
+ */
 class ParamHandler
 {
   public:
@@ -86,11 +89,7 @@ class ParamHandler
 
     std::shared_ptr<rclcpp::Node> driver_node_;
 
-#ifndef INTERNAL_DRIVER
     std::unique_ptr<CameraCtrlExtern> cam_ctrl_;
-#else
-    std::unique_ptr<CameraCtrlIntern> cam_ctrl_;
-#endif
 
     template <typename T>
     rcl_interfaces::msg::ParameterDescriptor setParamDescriptor(uint8_t param_type, T min, T max);
@@ -104,6 +103,9 @@ class ParamHandler
 
     rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr callback_handle;
 
+    /**
+   * @brief Called when one or more parameters are updated from ROS.
+   */
     virtual rcl_interfaces::msg::SetParametersResult setParamCB(
         const std::vector<rclcpp::Parameter> & parameters) = 0;
 
@@ -116,6 +118,9 @@ class ParamHandler
     rclcpp::Parameter makeParamFromCtrlVal(std::string_view param_name, int ctrl_id);
 };
 
+/**
+ * @brief Parameter handler for RGB SCM camera.
+ */
 class RGBParamHandler : public ParamHandler
 {
   public:
@@ -128,6 +133,9 @@ class RGBParamHandler : public ParamHandler
     void updateControlsParams() override;
 };
 
+/**
+ * @brief Parameter handler for ToF SCM camera.
+ */
 class ToFParamHandler : public ParamHandler
 {
   public:

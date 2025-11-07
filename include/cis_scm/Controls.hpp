@@ -27,6 +27,9 @@ namespace cis_scm
 
 inline constexpr int cc_matrix_nb_elems = 9;
 
+/**
+ * @brief ToF control IDs for setting device parameters.
+ */
 enum tof_set_param
 {
     TOF_SET_HISTORY_THRESHOLD = 100,
@@ -37,6 +40,9 @@ enum tof_set_param
     TOF_SET_INTEGRATION_TIME = 105
 };
 
+/**
+ * @brief ToF control IDs for reading device parameters.
+ */
 enum tof_get_param
 {
     TOF_GET_HISTORY_THRESHOLD = 100,
@@ -47,6 +53,9 @@ enum tof_get_param
     TOF_GET_INTEGRATION_TIME = 105
 };
 
+/**
+ * @brief RGB ISP control IDs for setting device parameters.
+ */
 enum rgb_set_param
 {
     // AEC
@@ -109,6 +118,9 @@ enum rgb_set_param
     RGB_SET_DEFECT_PIXEL_CLUSTER_CORRECTION = 39
 };
 
+/**
+ * @brief RGB ISP control IDs for reading device parameters.
+ */
 enum rgb_get_param
 {
     // AEC
@@ -169,6 +181,9 @@ enum rgb_get_param
     RGB_GET_DEFECT_PIXEL_CLUSTER_CORRECTION = 39
 };
 
+/**
+ * @brief Abstract interface for camera control operations.
+ */
 class CameraCtrl
 {
   public:
@@ -187,6 +202,9 @@ class CameraCtrl
     virtual ~CameraCtrl() = default;
 };
 
+/**
+ * @brief External implementation of CameraCtrl using CIS protocol.
+ */
 class CameraCtrlExtern : public CameraCtrl
 {
   public:
@@ -214,46 +232,5 @@ class CameraCtrlExtern : public CameraCtrl
 
     int readCispVal(std::string & out_val, int ctrl, uint8_t byte_len);
 };
-
-#ifdef INTERNAL_DRIVER
-
-class CameraCtrlIntern : public CameraCtrl
-{
-  public:
-    CameraCtrlIntern() {}
-
-    void setControlInt(int ctrl, int val) override;
-    int getControlInt(int ctrl, int & r_val) override;
-
-    void setControlFloat(int ctrl, float val) override;
-    int getControlFloat(int ctrl, float & r_val) override;
-
-    void setControlBool(int ctrl, bool val) override;
-    int getControlBool(int ctrl, bool & r_val) override;
-
-    void setControlFloatArray(int ctrl, float * vals, int arr_len) override;
-    int getControlFloatArray(int ctrl, std::vector<float> & r_vals, int arr_len) override;
-};
-#endif  // INTERNAL_DRIVER
-
-// class ToFControl
-
-// class CameraCtrlToF : CameraCtrl
-// {
-// public:
-//     void setHistoryThreshold(float val);
-//     void setHistoryLength(int val);
-//     void setMinReflectance(float val);
-//     void setMinConfidence(float val);
-//     void setKillFlyingDelta(float val);
-//     void setIntegrationTime(int val);
-
-//     float getHistoryThreshold();
-//     int getHistoryLength();
-//     float getMinReflectance();
-//     float getMinConfidence();
-//     float getKillFlyingDelta();
-//     int getIntegrationTime();
-// };
 }  // namespace cis_scm
 #endif  // CIS_SCM__CONTROLS_HPP_

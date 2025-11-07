@@ -1,5 +1,16 @@
 # Changelog
 
+
+## v0.3.1 2025-11-07
+### Features
+- [X] Added sample application with Point Cloud Library (2597811a)
+- [X] Added documentation, compatible with rosdoc2 (d619d1b7)
+
+### Updates | Fixes
+- [X] Depth map published on `depth/image` topic is not converted to JETMAP color anymore. (75e293c3)
+- [X] Split external and internal versions in two different branches. `main`` and `dev` branches have only the external one (87191ee0)
+
+
 ## v0.3.0 2025-10-20
 ### Features
 - [X] SCM-2M1 & SCM-8M1 ROS 2 driver (5ccafb26)
