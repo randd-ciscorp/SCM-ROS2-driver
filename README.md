@@ -1,14 +1,13 @@
 # SCM ROS 2 driver
 
-[![Main pipeline status](https://gitlab3.cis.local/imx/scm-ros2-driver/badges/main/pipeline.svg)](https://gitlab3.cis.local/imx/scm-ros2-driver/-/commits/main)
-
 ROS 2 driver node for CIS SCM camera series.
 
 ## Required system configurations
 
 - Host Linux PC/Robot
     - Supported OS / ROS distro
-        - Ubuntu 22.04 / ROS 2 Humble
+        - Ubuntu 22.04 / ROS 2 `Humble`
+        - Ubuntu 24.04 / ROS 2 `Jazzy`, `Kilted`, `Rolling`
     - USB3.0 port
 
 - SCM camera
