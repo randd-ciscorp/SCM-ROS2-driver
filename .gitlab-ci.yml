@@ -1,35 +1,44 @@
 variables:
-    ROS_DISTRO: humble
-    GIT_CLONE_PATH: $CI_BUILDS_DIR/ros2_ws/src/scm-ros2-driver
+    GIT_CLONE_PATH: $CI_BUILDS_DIR/scm-ros2-driver
 
 stages:
     - build
     - test
 
-image: ros:$ROS_DISTRO
+.distro_matrix: &distro_matrix
+    parallel:
+        matrix:
+            - ROS_DISTRO: ["humble", "jazzy", "kilted", "rolling"]
+    image: ros:$ROS_DISTRO
+    variables:
+        ROS_WS: "$CI_BUILDS_DIR/ws-$ROS_DISTRO"
+
 
 Build:
     stage: build
+    <<: *distro_matrix
     script:
         - apt update && apt upgrade -y
+        - apt-get install -y rsync
+        - mkdir -p $ROS_WS/src && rsync -a $GIT_CLONE_PATH/ $ROS_WS/src/scm-ros2-driver/
+        - cd $ROS_WS
         - source /opt/ros/$ROS_DISTRO/setup.bash
-        - cd $CI_BUILDS_DIR/ros2_ws
         - rosdep install --from-paths src -y
-        - apt install ros-humble-pcl-ros -y
+        - apt install ros-$ROS_DISTRO-pcl-ros -y
         - colcon build
-    artifacts:
-        paths:
-            - "$CI_BUILDS_DIR/ros2_ws/"
 
 Linting:
     stage: test
+    <<: *distro_matrix
     script:
         # Original (unchanged) LICENSE file & CONTRIBUTING file are required by ament_copyright
         - apt update && apt install wget -y
-        - wget https://www.apache.org/licenses/LICENSE-2.0.txt -O $GIT_CLONE_PATH/LICENSE
-        - wget https://raw.githubusercontent.com/ament/ament_lint/rolling/ament_copyright/ament_copyright/template/apache2_contributing.txt -O $GIT_CLONE_PATH/CONTRIBUTING.md
-        - cd $CI_BUILDS_DIR/ros2_ws
+        - export PKG_DIR="$ROS_WS/src/scm-ros2-driver"
+        - wget https://www.apache.org/licenses/LICENSE-2.0.txt -O "$PKG_DIR/LICENSE"
+        - wget https://raw.githubusercontent.com/ament/ament_lint/rolling/ament_copyright/ament_copyright/template/apache2_contributing.txt -O "$PKG_DIR/CONTRIBUTING.md"
+        - cd $ROS_WS
         - source install/setup.bash
         - colcon test --packages-select cis_scm --event-handlers console_direct+ --return-code-on-test-failure
-    dependencies:
-        - Build
+
+
+
