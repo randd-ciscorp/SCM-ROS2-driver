@@ -3,29 +3,37 @@
 
 
 ## ROS 2 installation
-If it is not already installed, please install the right ROS 2 dristribution
+If it is not already installed, please install a ROS 2 distribution
 
 [ROS 2 Humble Installation Tutorial](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html)
+[ROS 2 Jazzy Installation Tutorial](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)
+[ROS 2 Kilted Installation Tutorial](https://docs.ros.org/en/kilted/Installation/Ubuntu-Install-Debs.html)
+[ROS 2 Rolling Installation Tutorial](https://docs.ros.org/en/rolling/Installation/Ubuntu-Install-Debs.html)
 
-## ROS 2 Workspace
-If not created yet, create your workspace
-``` bash
-$ mkdir ros_ws & cd ros_ws
-```
 
-## Dependencies
-The following packages are necessary
-``` bash
-$ sudo apt update
-$ sudo apt install ros-humble-camera-info-manager
-```
+## `SCM-ROS2-driver` Installation
+1. If not created yet, create your workspace, and add `SCM-ROS2-driver` in it
+    ``` bash
+    $ mkdir ros_ws && cd ros_ws
+    $ git clone https://github.com/randd-ciscorp/SCM-ROS2-driver.git ./src/
+    ```
 
-## Driver package building
-``` bash
-$ git clone https://gitlab3.cis.local/imx/scm-ros2-driver.git ./src/
-$ source /opt/ros/humble/setup.bash
-$ colcon build
-```
+2. Source ROS environment
+    ``` bash
+    $ source /opt/ros/<ROS_DRISTRO>/setup.bash
+    ```
+
+3. Install dependencies
+    ```bash
+    $ sudo apt update
+    $ rosdep install --from-paths src -y
+    ```
+
+4. Build
+    ```bash
+    $ colcon build
+    ```
+
 
 ## Camera setup
 1. Connect the USB3.0 cable from host PC/Robot to the camera
