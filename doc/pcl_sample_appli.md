@@ -15,7 +15,7 @@ PCL processes used:
 - `CropBox`: point cloud cropping
 - `SACSegmentation`: Plane segmentation with RANSAC algorithm
 
-Application files are located at [pcl_sample.cpp](src/example/pcl_sample.cpp) and [pcl_sample_launch.py](launch/pcl_sample_launch.py)
+Application files are located at [pcl_sample.cpp](/src/example/pcl_sample.cpp) and [pcl_sample_launch.py](/launch/pcl_sample_launch.py)
 
 ## Dependencies
 
@@ -53,3 +53,7 @@ sudo apt install ros-<ROS_DISTRO>-pcl-ros
     ```
 
 ![sample application image](images/pcl_sample_image.jpg)
+
+## Reference
+
+> PCL is released under the terms of the 3-clause BSD license and is open source software.

@@ -3,12 +3,11 @@
 
 
 ## ROS 2 installation
-If it is not already installed, please install a ROS 2 distribution
-
-[ROS 2 Humble Installation Tutorial](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html)
-[ROS 2 Jazzy Installation Tutorial](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)
-[ROS 2 Kilted Installation Tutorial](https://docs.ros.org/en/kilted/Installation/Ubuntu-Install-Debs.html)
-[ROS 2 Rolling Installation Tutorial](https://docs.ros.org/en/rolling/Installation/Ubuntu-Install-Debs.html)
+If it is not already installed, please install a ROS 2 distribution  
+- [ROS 2 Humble Installation Tutorial](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html)
+- [ROS 2 Jazzy Installation Tutorial](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)
+- [ROS 2 Kilted Installation Tutorial](https://docs.ros.org/en/kilted/Installation/Ubuntu-Install-Debs.html)
+- [ROS 2 Rolling Installation Tutorial](https://docs.ros.org/en/rolling/Installation/Ubuntu-Install-Debs.html)
 
 
 ## `SCM-ROS2-driver` Installation
