@@ -177,12 +177,9 @@ DevInfo ExternalDevice::getInfo() const
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (xioctl(fd_, VIDIOC_G_FMT, &fmt) < 0) {
         errnoExit("Get device format");
-        return DevInfo();
     }
 
     devInfo.devName = std::string(reinterpret_cast<char *>(cap.card));
-    devInfo.driverVers = std::string(reinterpret_cast<char *>(cap.driver));
-    devInfo.sn = std::string(reinterpret_cast<char *>(cap.bus_info));
     devInfo.width = fmt.fmt.pix.width;
     devInfo.height = fmt.fmt.pix.height;
 

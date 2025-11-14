@@ -94,8 +94,6 @@ int RGBNode::initCap()
 void RGBNode::dispInfo(DevInfo devInfo) const
 {
     RCLCPP_INFO(get_logger(), "Device name: %s", devInfo.devName.c_str());
-    RCLCPP_INFO(get_logger(), "Driver version: %s", devInfo.driverVers.c_str());
-    RCLCPP_INFO(get_logger(), "Serial Number: %s", devInfo.sn.c_str());
     RCLCPP_INFO(get_logger(), "Width: %d", devInfo.width);
     RCLCPP_INFO(get_logger(), "Height: %d", devInfo.height);
 }
