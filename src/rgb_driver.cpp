@@ -33,7 +33,6 @@ RGBNode::RGBNode(const std::string node_name, const rclcpp::NodeOptions & node_o
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this);
 
     imgPub_ = create_publisher<sensor_msgs::msg::Image>(topicRGBPrefix_ + "image", 10);
-    importParams();
 }
 
 void RGBNode::importParams()
@@ -100,6 +99,8 @@ void RGBNode::dispInfo(DevInfo devInfo) const
 
 void RGBNode::start()
 {
+    importParams();
+
     if (initCap()) {
         RCLCPP_ERROR(get_logger(), "Camera initialization failed");
         rclcpp::shutdown();

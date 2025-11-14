@@ -16,12 +16,12 @@
 
 #include <chrono>
 #include <memory>
-#include <rclcpp/logging.hpp>
 #include <string>
 #include <vector>
 
 #include <opencv2/opencv.hpp>
 #include <rclcpp/callback_group.hpp>
+#include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
@@ -49,8 +49,6 @@ ToFNode::ToFNode(const std::string node_name, const rclcpp::NodeOptions & node_o
         create_publisher<sensor_msgs::msg::PointCloud2>(topicDepthPrefix_ + "points", 10);
 
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-tof1");
-
-    importParams();
 }
 
 int ToFNode::initCap()
@@ -101,6 +99,8 @@ void ToFNode::importParams()
 
 void ToFNode::start()
 {
+    importParams();
+
     if (initCap()) {
         RCLCPP_ERROR(get_logger(), "Camera initialization failed");
         rclcpp::shutdown();

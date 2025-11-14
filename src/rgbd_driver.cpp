@@ -15,11 +15,11 @@
 #include "cis_scm/rgbd_driver.hpp"
 
 #include <memory>
-#include <rclcpp/logging.hpp>
 #include <string>
 #include <vector>
 
 #include <opencv2/opencv.hpp>
+#include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
@@ -38,10 +38,7 @@ RGBDNode::RGBDNode(const std::string node_name, const rclcpp::NodeOptions & node
     infoRGBPub_ =
         create_publisher<sensor_msgs::msg::CameraInfo>(topicRGBPrefix_ + "camera_info", 10);
     cinfo_rgb_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-rgbd1");
-    cinfo_depth_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-tof1");
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-rgbd1");
-
-    importRGBDParameters();
 }
 
 int RGBDNode::initCap()
@@ -63,7 +60,6 @@ void RGBDNode::importRGBDParameters()
     if (!this->has_parameter("pointcloud_rgb")) {
         this->declare_parameter("pointcloud_rgb", true);
     }
-    RCLCPP_INFO(get_logger(), "Getting parameter");
     isPCLNoColor_ = !this->get_parameter("pointcloud_rgb").as_bool();
 
     // Check if rgb should be aligned to depth
@@ -72,36 +68,42 @@ void RGBDNode::importRGBDParameters()
     }
 
     // Cam params
-
-    if (!this->has_parameter("tof_camera_params")) {
+    if (!this->has_parameter("rgbd_depth_camera_params")) {
         this->declare_parameter(
-            "tof_camera_params", "package://cis_scm/config/cam_params/tof_params.yaml");
+            "rgbd_depth_camera_params",
+            "package://cis_scm/config/cam_params/rgbd_depth_params.yaml");
     }
-    std::string tof_param_file_path = this->get_parameter("tof_camera_params").as_string();
-    if (tof_param_file_path != "") {
-        RCLCPP_INFO(get_logger(), "Load parameters file: %s", tof_param_file_path.c_str());
-        if (cinfo_->validateURL(tof_param_file_path)) {
-            cinfo_->loadCameraInfo(tof_param_file_path);
-            cinfo_depth_->loadCameraInfo(tof_param_file_path);
+    std::string rgbd_depth_param_file_path =
+        this->get_parameter("rgbd_depth_camera_params").as_string();
+    if (rgbd_depth_param_file_path != "") {
+        RCLCPP_INFO(
+            get_logger(), "Load depth parameters file: %s", rgbd_depth_param_file_path.c_str());
+        if (cinfo_->validateURL(rgbd_depth_param_file_path)) {
+            cinfo_->loadCameraInfo(rgbd_depth_param_file_path);
         } else {
             RCLCPP_ERROR(
-                get_logger(), "Could not find parameter file at: %s", tof_param_file_path.c_str());
+                get_logger(), "Could not find parameter file at: %s",
+                rgbd_depth_param_file_path.c_str());
             rclcpp::shutdown();
         }
     }
 
-    if (!this->has_parameter("rgb_camera_params")) {
+    if (!this->has_parameter("rgbd_color_camera_params")) {
         this->declare_parameter(
-            "rgb_camera_params", "package://cis_scm/config/cam_params/rgbd_color_params.yaml");
+            "rgbd_color_camera_params",
+            "package://cis_scm/config/cam_params/rgbd_color_params.yaml");
     }
-    std::string rgb_param_file_path = this->get_parameter("rgb_camera_params").as_string();
-    if (rgb_param_file_path != "") {
-        RCLCPP_INFO(get_logger(), "Load parameters file: %s", rgb_param_file_path.c_str());
-        if (cinfo_rgb_->validateURL(rgb_param_file_path)) {
-            cinfo_rgb_->loadCameraInfo(rgb_param_file_path);
+    std::string rgbd_color_param_file_path =
+        this->get_parameter("rgbd_color_camera_params").as_string();
+    if (rgbd_color_param_file_path != "") {
+        RCLCPP_INFO(
+            get_logger(), "Load color parameters file: %s", rgbd_color_param_file_path.c_str());
+        if (cinfo_rgb_->validateURL(rgbd_color_param_file_path)) {
+            cinfo_rgb_->loadCameraInfo(rgbd_color_param_file_path);
         } else {
             RCLCPP_ERROR(
-                get_logger(), "Could not find parameter file at: %s", rgb_param_file_path.c_str());
+                get_logger(), "Could not find parameter file at: %s",
+                rgbd_color_param_file_path.c_str());
             rclcpp::shutdown();
         }
     }
@@ -109,6 +111,8 @@ void RGBDNode::importRGBDParameters()
 
 void RGBDNode::start()
 {
+    importRGBDParameters();
+
     if (initCap()) {
         RCLCPP_ERROR(get_logger(), "Camera initialization failed");
         rclcpp::shutdown();
