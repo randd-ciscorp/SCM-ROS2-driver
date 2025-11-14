@@ -16,6 +16,7 @@
 
 #include <chrono>
 #include <memory>
+#include <rclcpp/logging.hpp>
 #include <string>
 #include <vector>
 
@@ -206,6 +207,11 @@ void ToFNode::depthCallback()
         RCLCPP_ERROR(get_logger(), "Camera connection lost or unavailable");
         rclcpp::sleep_for(std::chrono::seconds(3));
         RCLCPP_INFO(get_logger(), "New camera connection attempt");
+        if (!cap_->connect(width_, height_)) {
+            RCLCPP_INFO(get_logger(), "Camera connected");
+        } else {
+            RCLCPP_ERROR(get_logger(), "Camera connection failed");
+        }
     } else {
         if (!cap_->getData(reinterpret_cast<uint8_t *>(frameData.data()))) {
             // Cam Info
@@ -220,6 +226,8 @@ void ToFNode::depthCallback()
 
             // 3D Image
             pubDepthPtc(xyzData_);
+        } else {
+            cap_->disconnect();
         }
     }
 }

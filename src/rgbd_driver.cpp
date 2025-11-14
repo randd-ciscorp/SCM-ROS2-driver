@@ -15,6 +15,7 @@
 #include "cis_scm/rgbd_driver.hpp"
 
 #include <memory>
+#include <rclcpp/logging.hpp>
 #include <string>
 #include <vector>
 
@@ -226,26 +227,34 @@ void RGBDNode::RGBDCallback()
     xyzrgbData.rgb = std::vector<cv::Vec3b>(width_ * height_);
     xyzrgbData.ir = std::vector<uint8_t>(width_ * height_);
 
-    while (rclcpp::ok() && cap_->isStreamOn()) {
-        if (cap_->getData(frameData_.data()) < 0) {
-            cap_->disconnect();
-            break;
-        }
-
-        // Cam Info
-        auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());
-        infoMsg->header.frame_id = cameraDepthFrame_;
-        infoMsg->header.stamp = this->get_clock()->now();
-        infoPub_->publish(*infoMsg);
-
-        xyzrgbData = splitXYZRGBData(frameData_.data());
-
-        pubDepthImage(xyzrgbData.xyz.z.data());
-        pubRGBImage(reinterpret_cast<uint8_t *>(xyzrgbData.rgb.data()));
-        if (isPCLNoColor_) {
-            pubDepthPtc(xyzrgbData.xyz);
+    if (!cap_->isStreamOn()) {
+        RCLCPP_ERROR(get_logger(), "Camera connection lost or unavailable");
+        rclcpp::sleep_for(std::chrono::seconds(3));
+        RCLCPP_INFO(get_logger(), "New camera connection attempt");
+        if (!cap_->connect(width_, height_)) {
+            RCLCPP_INFO(get_logger(), "Camera connected");
         } else {
-            pubRGBDPtc(xyzrgbData);
+            RCLCPP_ERROR(get_logger(), "Camera connection failed");
+        }
+    } else {
+        if (!cap_->getData(reinterpret_cast<uint8_t *>(frameData_.data()))) {
+            // Cam Info
+            auto infoMsg = std::make_unique<sensor_msgs::msg::CameraInfo>(cinfo_->getCameraInfo());
+            infoMsg->header.frame_id = cameraDepthFrame_;
+            infoMsg->header.stamp = this->get_clock()->now();
+            infoPub_->publish(*infoMsg);
+
+            xyzrgbData = splitXYZRGBData(frameData_.data());
+
+            pubDepthImage(xyzrgbData.xyz.z.data());
+            pubRGBImage(reinterpret_cast<uint8_t *>(xyzrgbData.rgb.data()));
+            if (isPCLNoColor_) {
+                pubDepthPtc(xyzrgbData.xyz);
+            } else {
+                pubRGBDPtc(xyzrgbData);
+            }
+        } else {
+            cap_->disconnect();
         }
     }
 }

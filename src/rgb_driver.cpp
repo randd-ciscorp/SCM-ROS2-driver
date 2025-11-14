@@ -146,6 +146,11 @@ void RGBNode::imgCallback()
         RCLCPP_ERROR(get_logger(), "Camera connection lost or unavailable");
         rclcpp::sleep_for(std::chrono::seconds(3));
         RCLCPP_INFO(get_logger(), "New camera connection attempt");
+        if (!cap_->connect(width_, height_)) {
+            RCLCPP_INFO(get_logger(), "Camera connected");
+        } else {
+            RCLCPP_ERROR(get_logger(), "Camera connection failed");
+        }
     } else {
         cv::Mat imgData(height_, width_, CV_8UC2);
         if (!cap_->getData(imgData.data)) {
@@ -159,6 +164,8 @@ void RGBNode::imgCallback()
             // 2D image
             cv::cvtColor(imgData, imgData, cv::COLOR_YUV2BGR_YUYV);
             pubImage(imgData.data);
+        } else {
+            cap_->disconnect();
         }
     }
 }
