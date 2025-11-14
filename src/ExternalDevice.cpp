@@ -194,8 +194,16 @@ int ExternalDevice::getData(uint8_t * data)
     FD_ZERO(&fds);
     FD_SET(fd_, &fds);
 
-    if (select(fd_ + 1, &fds, NULL, NULL, NULL) <= 0) {
-        return errnoPrint("Frame capture timeout");
+    struct timeval tv;
+    tv.tv_sec = 20;
+    tv.tv_usec = 0;
+
+    int select_ret = select(fd_ + 1, &fds, NULL, NULL, &tv);
+    if (select_ret == 0) {
+        fprintf(stderr, "Frame capture timeout");
+        return -1;
+    } else if (select_ret < 0) {
+        return errnoPrint("select");
     }
 
     if (FD_ISSET(fd_, &fds)) {
