@@ -18,12 +18,15 @@
 #include <sys/types.h>
 #include <termio.h>
 #include <unistd.h>
+
 #include <cctype>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <exception>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -32,13 +35,42 @@ namespace cis_scm
 
 CameraCtrlExtern::CameraCtrlExtern()
 {
-    fd_ = open("/dev/ttyACM0", O_RDWR | O_NOCTTY);
-    if (fd_ < 0) {
+    if (openACMDev() < 0) {
         perror("Error opening CIS Protocol device");
         throw std::runtime_error("CameraCtrlExtern init failed");
     }
 
     configSerial();
+}
+
+int CameraCtrlExtern::openACMDev()
+{
+    for (int i = 0; i < 10; i++) {
+        std::ostringstream oss;
+        oss << "/sys/class/tty/ttyACM" << i << "/device/../product";
+        std::string dev_sysfile = oss.str();
+
+        std::ifstream ifs(dev_sysfile);
+        if (ifs.fail()) {
+            continue;
+        }
+
+        std::string dev_product;
+        std::getline(ifs, dev_product);
+
+        if (dev_product == cis_prod_name) {
+            oss = std::ostringstream{};
+            oss << "/dev/ttyACM" << i;
+            std::string dev_file = oss.str();
+
+            fd_ = open(dev_file.c_str(), O_RDWR | O_NOCTTY);
+            if (fd_ < 0) {
+                return -1;
+            }
+            return 0;
+        }
+    }
+    return -1;
 }
 
 void CameraCtrlExtern::configSerial()

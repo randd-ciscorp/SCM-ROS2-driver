@@ -16,14 +16,17 @@
 #define CIS_SCM__CONTROLS_HPP_
 
 #include <sys/types.h>
+
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <string_view>
 
 #include <rclcpp/parameter_client.hpp>
 
 namespace cis_scm
 {
+inline constexpr std::string_view cis_prod_name = "SCM Series";
 
 inline constexpr int cc_matrix_nb_elems = 9;
 
@@ -228,6 +231,7 @@ class CameraCtrlExtern : public CameraCtrl
     int fd_;
     bool ctrl_ok = true;
 
+    int openACMDev();
     void configSerial();
 
     int readCispVal(std::string & out_val, int ctrl, uint8_t byte_len);
