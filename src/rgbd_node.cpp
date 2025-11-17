@@ -37,7 +37,11 @@ int main(int argc, char * argv[])
         RCLCPP_ERROR(rgbd_node->get_logger(), "Camera control parameters are not active.");
     }
     rgbd_node->start();
-    rclcpp::spin(rgbd_node);
+
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(rgbd_node);
+
+    executor.spin();
     rclcpp::shutdown();
     return 0;
 }
