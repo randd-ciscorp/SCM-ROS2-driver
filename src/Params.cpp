@@ -18,6 +18,7 @@
 
 #include <cassert>
 #include <chrono>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -236,11 +237,28 @@ RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node)
                 ignore_set_param_cb_ = false;
                 return rcl_interfaces::msg::SetParametersResult().set__successful(true);
             }
-            return this->setParamCB(param);
-        });
 
+            if (!cam_ctrl_->isControlOk()) {
+                RCLCPP_WARN(driver_node_->get_logger(), "Camera controls lost. Recreating...");
+                cam_ctrl_.reset();
+                cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
+                return rcl_interfaces::msg::SetParametersResult().set__successful(true);
+            } else {
+                return this->setParamCB(param);
+            }
+        });
     timer_ = driver_node_->create_wall_timer(
-        std::chrono::milliseconds(1000), [this]() { updateControlsParams(); }, params_cb_grp_);
+        std::chrono::milliseconds(1000),
+        [this]() {
+            if (!cam_ctrl_->isControlOk()) {
+                RCLCPP_WARN(driver_node_->get_logger(), "Camera controls lost. Recreating...");
+                cam_ctrl_.reset();
+                cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
+            } else {
+                updateControlsParams();
+            }
+        },
+        params_cb_grp_);
 
     RCLCPP_INFO(driver_node_->get_logger(), "Parameter Handler initialized");
 }
@@ -281,11 +299,29 @@ ToFParamHandler::ToFParamHandler(std::shared_ptr<rclcpp::Node> node)
                 ignore_set_param_cb_ = false;
                 return rcl_interfaces::msg::SetParametersResult().set__successful(true);
             }
-            return this->setParamCB(param);
+
+            if (!cam_ctrl_->isControlOk()) {
+                RCLCPP_WARN(driver_node_->get_logger(), "Camera controls lost. Recreating...");
+                cam_ctrl_.reset();
+                cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
+                return rcl_interfaces::msg::SetParametersResult().set__successful(true);
+            } else {
+                return this->setParamCB(param);
+            }
         });
 
     timer_ = driver_node_->create_wall_timer(
-        std::chrono::milliseconds(1000), [this]() { updateControlsParams(); }, params_cb_grp_);
+        std::chrono::milliseconds(1000),
+        [this]() {
+            if (!cam_ctrl_->isControlOk()) {
+                RCLCPP_WARN(driver_node_->get_logger(), "Camera controls lost. Recreating...");
+                cam_ctrl_.reset();
+                cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
+            } else {
+                updateControlsParams();
+            }
+        },
+        params_cb_grp_);
 
     RCLCPP_INFO(driver_node_->get_logger(), "Parameter Handler initialized");
 }
