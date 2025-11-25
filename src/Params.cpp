@@ -33,6 +33,7 @@
 #include <rcl_interfaces/msg/set_parameters_result.hpp>
 
 #include <cis_scm/Controls.hpp>
+#include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 using namespace std::chrono_literals;
 
@@ -92,22 +93,22 @@ void ParamHandler::setParam(
     if (param.get_type() == param_type) {
         if (param.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE) {
             // No ROS float ParameterType but camera params are in float
-            cam_ctrl_->setControlFloat(cam_param_id, static_cast<float>(param.as_double()));
+            cam_ctrl_.setControlFloat(cam_param_id, static_cast<float>(param.as_double()));
         }
         if (param.get_type() == rclcpp::ParameterType::PARAMETER_INTEGER) {
-            cam_ctrl_->setControlInt(cam_param_id, param.as_int());
+            cam_ctrl_.setControlInt(cam_param_id, param.as_int());
         }
         if (param.get_type() == rclcpp::ParameterType::PARAMETER_BOOL) {
-            cam_ctrl_->setControlInt(cam_param_id, param.as_bool());
+            cam_ctrl_.setControlInt(cam_param_id, param.as_bool());
         }
         if (param.get_type() == rclcpp::PARAMETER_DOUBLE_ARRAY) {
             std::vector<float> f_vals(
                 param.as_double_array().begin(), param.as_double_array().end());
-            cam_ctrl_->setControlFloatArray(
+            cam_ctrl_.setControlFloatArray(
                 cam_param_id, f_vals.data(), param.as_double_array().size());
         }
     } else {
-        RCLCPP_ERROR(logger_, "Parameter value type does not match");
+        RCLCPP_ERROR(driver_node_->get_logger(), "Parameter value type does not match");
     }
 }
 
@@ -121,15 +122,15 @@ rclcpp::Parameter ParamHandler::makeParamFromCtrlVal(std::string_view param_name
     T param_val;
     int ret_get = -1;
     if constexpr (std::is_same_v<T, int>) {
-        ret_get = cam_ctrl_->getControlInt(ctrl_id, param_val);
+        ret_get = cam_ctrl_.getControlInt(ctrl_id, param_val);
     } else if constexpr (std::is_same_v<T, float>) {
-        ret_get = cam_ctrl_->getControlFloat(ctrl_id, param_val);
+        ret_get = cam_ctrl_.getControlFloat(ctrl_id, param_val);
     } else if constexpr (std::is_same_v<T, bool>) {
-        ret_get = cam_ctrl_->getControlBool(ctrl_id, param_val);
+        ret_get = cam_ctrl_.getControlBool(ctrl_id, param_val);
     } else if constexpr (std::is_array_v<T> && std::is_same_v<std::remove_extent_t<T>, float>) {
         constexpr int array_size = std::extent_v<T>;
         std::vector<float> vec_param_vals;
-        ret_get = cam_ctrl_->getControlFloatArray(ctrl_id, vec_param_vals, array_size);
+        ret_get = cam_ctrl_.getControlFloatArray(ctrl_id, vec_param_vals, array_size);
         return rclcpp::Parameter(param_name_str, vec_param_vals);
     } else {
         std::cout << typeid(T).name() << std::endl;
@@ -144,11 +145,17 @@ rclcpp::Parameter ParamHandler::makeParamFromCtrlVal(std::string_view param_name
     }
 }
 
-RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node)
+RGBParamHandler::RGBParamHandler(
+    const std::shared_ptr<rclcpp::Node> & node, CameraCtrlExtern & cam_ctrl)
+: ParamHandler(node, cam_ctrl)
 {
-    driver_node_ = node;
-    cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
+    declareDeviceParams();
 
+    RCLCPP_INFO(driver_node_->get_logger(), "RGB Parameter Handler initialized");
+}
+
+void RGBParamHandler::declareDeviceParams()
+{
     using rcl_interfaces::msg::ParameterType;
 
     declareParam(IspRosParams::ae_enable, true);
@@ -226,69 +233,10 @@ RGBParamHandler::RGBParamHandler(std::shared_ptr<rclcpp::Node> node)
         setParamDescriptor(ParameterType::PARAMETER_INTEGER, -90, 89));
 
     declareParam(IspRosParams::dpcc_enable, true);
-
-    params_cb_grp_ =
-        driver_node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-
-    callback_handle = driver_node_->add_on_set_parameters_callback(
-        [this](const std::vector<rclcpp::Parameter> & param)
-            -> rcl_interfaces::msg::SetParametersResult {
-            if (ignore_set_param_cb_) {
-                ignore_set_param_cb_ = false;
-                return rcl_interfaces::msg::SetParametersResult().set__successful(true);
-            }
-
-            if (!cam_ctrl_->isControlOk()) {
-                RCLCPP_WARN(driver_node_->get_logger(), "Camera controls lost. Recreating...");
-                cam_ctrl_.reset();
-                cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
-                return rcl_interfaces::msg::SetParametersResult().set__successful(true);
-            } else {
-                return this->setParamCB(param);
-            }
-        });
-    timer_ = driver_node_->create_wall_timer(
-        std::chrono::milliseconds(1000),
-        [this]() {
-            if (!cam_ctrl_->isControlOk()) {
-                RCLCPP_WARN(driver_node_->get_logger(), "Camera controls lost. Recreating...");
-                cam_ctrl_.reset();
-                cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
-            } else {
-                updateControlsParams();
-            }
-        },
-        params_cb_grp_);
-
-    RCLCPP_INFO(driver_node_->get_logger(), "Parameter Handler initialized");
 }
 
-ToFParamHandler::ToFParamHandler(std::shared_ptr<rclcpp::Node> node)
+void RGBParamHandler::initCallbacks()
 {
-    driver_node_ = node;
-    cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
-
-    using rcl_interfaces::msg::ParameterType;
-
-    declareParam(
-        TofRosParams::histo_thresh, 17.5,
-        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 100.0));
-    declareParam(
-        TofRosParams::histo_length, 15,
-        setParamDescriptor(ParameterType::PARAMETER_INTEGER, 1, 100));
-    declareParam(
-        TofRosParams::min_reflect, 7.5,
-        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 50.0));
-    declareParam(
-        TofRosParams::min_confi, 20.0,
-        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 512.0));
-    declareParam(
-        TofRosParams::kill_flyind_delta, 0.03,
-        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 1.0));
-    declareParam(
-        TofRosParams::integr_time, 1000,
-        setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1000));
-
     params_cb_grp_ =
         driver_node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
@@ -299,31 +247,29 @@ ToFParamHandler::ToFParamHandler(std::shared_ptr<rclcpp::Node> node)
                 ignore_set_param_cb_ = false;
                 return rcl_interfaces::msg::SetParametersResult().set__successful(true);
             }
-
-            if (!cam_ctrl_->isControlOk()) {
-                RCLCPP_WARN(driver_node_->get_logger(), "Camera controls lost. Recreating...");
-                cam_ctrl_.reset();
-                cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
-                return rcl_interfaces::msg::SetParametersResult().set__successful(true);
-            } else {
+            if (cam_ctrl_.isControlOk()) {
                 return this->setParamCB(param);
+            } else {
+                return rcl_interfaces::msg::SetParametersResult().set__successful(true);
             }
         });
-
     timer_ = driver_node_->create_wall_timer(
         std::chrono::milliseconds(1000),
         [this]() {
-            if (!cam_ctrl_->isControlOk()) {
-                RCLCPP_WARN(driver_node_->get_logger(), "Camera controls lost. Recreating...");
-                cam_ctrl_.reset();
-                cam_ctrl_ = std::make_unique<CameraCtrlExtern>();
-            } else {
+            if (cam_ctrl_.isControlOk()) {
                 updateControlsParams();
             }
         },
         params_cb_grp_);
+}
 
-    RCLCPP_INFO(driver_node_->get_logger(), "Parameter Handler initialized");
+ToFParamHandler::ToFParamHandler(
+    const std::shared_ptr<rclcpp::Node> & node, CameraCtrlExtern & cam_ctrl)
+: ParamHandler(node, cam_ctrl)
+{
+    declareDeviceParams();
+
+    RCLCPP_INFO(driver_node_->get_logger(), "ToF Parameter Handler initialized");
 }
 
 rcl_interfaces::msg::SetParametersResult RGBParamHandler::setParamCB(
@@ -349,20 +295,20 @@ rcl_interfaces::msg::SetParametersResult RGBParamHandler::setParamCB(
                 rgb_set_param::RGB_SET_AUTO_WHITE_BALANCE, param,
                 rclcpp::ParameterType::PARAMETER_BOOL);
             rclcpp::sleep_for(100ms);
-            cam_ctrl_->setControlBool(rgb_set_param::RGB_SET_RESET_WHITE_BALANCE_CONTROL, true);
+            cam_ctrl_.setControlBool(rgb_set_param::RGB_SET_RESET_WHITE_BALANCE_CONTROL, true);
         } else if (param.get_name() == IspRosParams::awb_index) {
-            cam_ctrl_->setControlBool(rgb_set_param::RGB_SET_AUTO_WHITE_BALANCE, false);
+            cam_ctrl_.setControlBool(rgb_set_param::RGB_SET_AUTO_WHITE_BALANCE, false);
             rclcpp::sleep_for(100ms);
-            cam_ctrl_->setControlInt(rgb_set_param::RGB_SET_AUTO_WHITE_BALANCE_MODE, 1);
+            cam_ctrl_.setControlInt(rgb_set_param::RGB_SET_AUTO_WHITE_BALANCE_MODE, 1);
 
             rclcpp::sleep_for(100ms);
             setParam(
                 rgb_set_param::RGB_SET_AUTO_WHITE_BALANCE_INDEX, param,
                 rclcpp::ParameterType::PARAMETER_INTEGER);
             rclcpp::sleep_for(100ms);
-            cam_ctrl_->setControlBool(rgb_set_param::RGB_SET_RESET_WHITE_BALANCE_CONTROL, true);
+            cam_ctrl_.setControlBool(rgb_set_param::RGB_SET_RESET_WHITE_BALANCE_CONTROL, true);
             rclcpp::sleep_for(100ms);
-            cam_ctrl_->setControlBool(rgb_set_param::RGB_SET_AUTO_WHITE_BALANCE, true);
+            cam_ctrl_.setControlBool(rgb_set_param::RGB_SET_AUTO_WHITE_BALANCE, true);
 
         } else if (param.get_name() == IspRosParams::dewarp_bypass) {
             setParam(
@@ -573,6 +519,30 @@ rcl_interfaces::msg::SetParametersResult ToFParamHandler::setParamCB(
     return res;
 }
 
+void ToFParamHandler::declareDeviceParams()
+{
+    using rcl_interfaces::msg::ParameterType;
+
+    declareParam(
+        TofRosParams::histo_thresh, 17.5,
+        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 100.0));
+    declareParam(
+        TofRosParams::histo_length, 15,
+        setParamDescriptor(ParameterType::PARAMETER_INTEGER, 1, 100));
+    declareParam(
+        TofRosParams::min_reflect, 7.5,
+        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 50.0));
+    declareParam(
+        TofRosParams::min_confi, 20.0,
+        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 512.0));
+    declareParam(
+        TofRosParams::kill_flyind_delta, 0.03,
+        setParamDescriptor(ParameterType::PARAMETER_DOUBLE, 0.0, 1.0));
+    declareParam(
+        TofRosParams::integr_time, 1000,
+        setParamDescriptor(ParameterType::PARAMETER_INTEGER, 0, 1000));
+}
+
 void ToFParamHandler::updateControlsParams()
 {
     driver_node_->set_parameter(
@@ -585,4 +555,103 @@ void ToFParamHandler::updateControlsParams()
         makeParamFromCtrlVal<int>(TofRosParams::integr_time, TOF_GET_INTEGRATION_TIME));
 }
 
+void ToFParamHandler::initCallbacks()
+{
+    params_cb_grp_ =
+        driver_node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
+    callback_handle = driver_node_->add_on_set_parameters_callback(
+        [this](const std::vector<rclcpp::Parameter> & param)
+            -> rcl_interfaces::msg::SetParametersResult {
+            if (ignore_set_param_cb_) {
+                ignore_set_param_cb_ = false;
+                return rcl_interfaces::msg::SetParametersResult().set__successful(true);
+            }
+
+            if (cam_ctrl_.isControlOk()) {
+                return this->setParamCB(param);
+            } else {
+                return rcl_interfaces::msg::SetParametersResult().set__successful(true);
+            }
+        });
+
+    timer_ = driver_node_->create_wall_timer(
+        std::chrono::milliseconds(1000),
+        [this]() {
+            if (cam_ctrl_.isControlOk()) {
+                updateControlsParams();
+            }
+        },
+        params_cb_grp_);
+}
+
+RGBDParamHandler::RGBDParamHandler(
+    const std::shared_ptr<rclcpp::Node> & node, CameraCtrlExtern & cam_ctrl)
+: ParamHandler(node, cam_ctrl),
+  rgb_param_handler_(node, cam_ctrl),
+  tof_param_handler_(node, cam_ctrl)
+{
+    if (!driver_node_) {
+        throw std::runtime_error("RGBDParamHandler: node is null");
+    }
+
+    RCLCPP_INFO(driver_node_->get_logger(), "Parameter Handler initialized");
+}
+
+rcl_interfaces::msg::SetParametersResult RGBDParamHandler::setParamCB(
+    const std::vector<rclcpp::Parameter> & parameters)
+{
+    rcl_interfaces::msg::SetParametersResult res;
+    res.successful = true;
+    rgb_param_handler_.setParamCB(parameters);
+    tof_param_handler_.setParamCB(parameters);
+    return res;
+}
+
+void RGBDParamHandler::declareDeviceParams()
+{
+    rgb_param_handler_.declareDeviceParams();
+    tof_param_handler_.declareDeviceParams();
+}
+
+void RGBDParamHandler::updateControlsParams()
+{
+    rgb_param_handler_.updateControlsParams();
+    tof_param_handler_.updateControlsParams();
+}
+
+void RGBDParamHandler::initCallbacks()
+{
+    params_cb_grp_ =
+        driver_node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
+    callback_handle = driver_node_->add_on_set_parameters_callback(
+        [this](const std::vector<rclcpp::Parameter> & param)
+            -> rcl_interfaces::msg::SetParametersResult {
+            // Check if both RGB & ToF param receive an auto update param
+            if (rgb_param_handler_.getIgnoreSetParamCB()) {
+                rgb_param_handler_.setIgnoreSetParamCB(false);
+                return rcl_interfaces::msg::SetParametersResult().set__successful(true);
+            }
+            if (tof_param_handler_.getIgnoreSetParamCB()) {
+                tof_param_handler_.setIgnoreSetParamCB(false);
+                return rcl_interfaces::msg::SetParametersResult().set__successful(true);
+            }
+
+            if (cam_ctrl_.isControlOk()) {
+                return setParamCB(param);
+            } else {
+                return rcl_interfaces::msg::SetParametersResult().set__successful(true);
+            }
+        });
+
+    timer_ = driver_node_->create_wall_timer(
+        std::chrono::milliseconds(5000),
+        [this]() {
+            if (cam_ctrl_.isControlOk()) {
+                updateControlsParams();
+            }
+        },
+        params_cb_grp_);
+}
 }  // namespace cis_scm

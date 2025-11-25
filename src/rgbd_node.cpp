@@ -16,6 +16,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/executors/multi_threaded_executor.hpp>
 
+#include "cis_scm/Controls.hpp"
 #include "cis_scm/Params.hpp"
 #include "cis_scm/rgbd_driver.hpp"
 
@@ -28,14 +29,16 @@ int main(int argc, char * argv[])
     std::shared_ptr<cis_scm::RGBDNode> rgbd_node =
         std::make_shared<cis_scm::RGBDNode>("rgbd_node", options);
 
-    std::shared_ptr<cis_scm::RGBParamHandler> rgb_param_handler;
-    std::shared_ptr<cis_scm::ToFParamHandler> tof_param_handler;
+    std::shared_ptr<cis_scm::RGBDParamHandler> rgbd_param_handler;
+    std::unique_ptr<cis_scm::CameraCtrlExtern> cam_ctrl;
     try {
-        rgb_param_handler = std::make_shared<cis_scm::RGBParamHandler>(rgbd_node);
-        tof_param_handler = std::make_shared<cis_scm::ToFParamHandler>(rgbd_node);
+        cam_ctrl = std::make_unique<cis_scm::CameraCtrlExtern>();
+        rgbd_param_handler = std::make_shared<cis_scm::RGBDParamHandler>(rgbd_node, *cam_ctrl);
+        rgbd_param_handler->initCallbacks();
     } catch (const std::exception & e) {
         RCLCPP_ERROR(rgbd_node->get_logger(), "Camera control parameters are not active.");
     }
+
     rgbd_node->start();
 
     rclcpp::executors::MultiThreadedExecutor executor;

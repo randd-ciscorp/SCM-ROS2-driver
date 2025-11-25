@@ -17,6 +17,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/executors/multi_threaded_executor.hpp>
 
+#include "cis_scm/Controls.hpp"
 #include "cis_scm/Params.hpp"
 #include "cis_scm/tof_driver.hpp"
 
@@ -30,8 +31,11 @@ int main(int argc, char * argv[])
         std::make_shared<cis_scm::ToFNode>("tof_node", options);
 
     std::shared_ptr<cis_scm::ToFParamHandler> param_handler;
+    std::unique_ptr<cis_scm::CameraCtrlExtern> cam_ctrl;
     try {
-        param_handler = std::make_shared<cis_scm::ToFParamHandler>(tof_node);
+        cam_ctrl = std::make_unique<cis_scm::CameraCtrlExtern>();
+        param_handler = std::make_shared<cis_scm::ToFParamHandler>(tof_node, *cam_ctrl);
+        param_handler->initCallbacks();
     } catch (const std::exception & e) {
         RCLCPP_ERROR(tof_node->get_logger(), "Camera control parameters are not active.");
     }
