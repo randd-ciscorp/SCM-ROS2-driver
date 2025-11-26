@@ -14,13 +14,13 @@
 
 #include "cis_scm/tof_driver.hpp"
 
-#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include <opencv2/opencv.hpp>
 #include <rclcpp/callback_group.hpp>
+#include <rclcpp/qos.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/image_encodings.hpp>
@@ -38,15 +38,17 @@ ToFNode::ToFNode(const std::string node_name, const rclcpp::NodeOptions & node_o
 : Node(node_name, node_options)
 
 {
+    rclcpp::SensorDataQoS qos;
+
     crit_cb_grp_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     non_crit_cb_grp_ = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
 
-    depthImgPub_ = create_publisher<sensor_msgs::msg::Image>(topicDepthPrefix_ + "image", 10);
+    depthImgPub_ = create_publisher<sensor_msgs::msg::Image>(topicDepthPrefix_ + "image", qos);
     infoPub_ =
-        create_publisher<sensor_msgs::msg::CameraInfo>(topicDepthPrefix_ + "camera_info", 10);
+        create_publisher<sensor_msgs::msg::CameraInfo>(topicDepthPrefix_ + "camera_info", qos);
 
     depthPCLPub_ =
-        create_publisher<sensor_msgs::msg::PointCloud2>(topicDepthPrefix_ + "points", 10);
+        create_publisher<sensor_msgs::msg::PointCloud2>(topicDepthPrefix_ + "points", qos);
 
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-tof1");
 }
@@ -121,8 +123,8 @@ void ToFNode::start()
         // ptcModif.resize(ptcMsg_.width * ptcMsg_.height);
 
         RCLCPP_INFO(get_logger(), "Start capturing");
-        timer_ = this->create_wall_timer(
-            66.666ms, std::bind(&ToFNode::depthCallback, this), crit_cb_grp_);
+        timer_ =
+            this->create_wall_timer(70ms, std::bind(&ToFNode::depthCallback, this), crit_cb_grp_);
     } else {
         RCLCPP_ERROR(get_logger(), "Camera connection failed");
         rclcpp::shutdown();

@@ -15,6 +15,7 @@
 #include "cis_scm/rgb_driver.hpp"
 
 #include <opencv2/opencv.hpp>
+#include <rclcpp/qos.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
@@ -28,11 +29,13 @@ namespace cis_scm
 RGBNode::RGBNode(const std::string node_name, const rclcpp::NodeOptions & node_options)
 : Node(node_name, node_options)
 {
-    infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicRGBPrefix_ + "camera_info", 10);
+    rclcpp::SensorDataQoS qos;
+
+    infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicRGBPrefix_ + "camera_info", qos);
 
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this);
 
-    imgPub_ = create_publisher<sensor_msgs::msg::Image>(topicRGBPrefix_ + "image", 10);
+    imgPub_ = create_publisher<sensor_msgs::msg::Image>(topicRGBPrefix_ + "image", qos);
 }
 
 void RGBNode::importParams()

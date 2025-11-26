@@ -20,6 +20,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <rclcpp/logging.hpp>
+#include <rclcpp/qos.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
@@ -34,9 +35,11 @@ namespace cis_scm
 RGBDNode::RGBDNode(const std::string node_name, const rclcpp::NodeOptions & node_options)
 : ToFNode(node_name, node_options)
 {
-    rgbImgPub_ = create_publisher<sensor_msgs::msg::Image>(topicRGBPrefix_ + "image", 10);
+    rclcpp::SensorDataQoS qos;
+
+    rgbImgPub_ = create_publisher<sensor_msgs::msg::Image>(topicRGBPrefix_ + "image", qos);
     infoRGBPub_ =
-        create_publisher<sensor_msgs::msg::CameraInfo>(topicRGBPrefix_ + "camera_info", 10);
+        create_publisher<sensor_msgs::msg::CameraInfo>(topicRGBPrefix_ + "camera_info", qos);
     cinfo_rgb_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-rgbd1");
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-rgbd1");
 }
@@ -138,7 +141,7 @@ void RGBDNode::start()
 
         // Start capturing
         RCLCPP_INFO(get_logger(), "Start Capturing");
-        timer_ = this->create_wall_timer(30ms, std::bind(&RGBDNode::RGBDCallback, this));
+        timer_ = this->create_wall_timer(70ms, std::bind(&RGBDNode::RGBDCallback, this));
     } else {
         RCLCPP_ERROR(get_logger(), "Camera not connected");
         rclcpp::shutdown();
