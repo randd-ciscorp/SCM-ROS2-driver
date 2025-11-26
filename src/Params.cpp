@@ -33,7 +33,6 @@
 #include <rcl_interfaces/msg/set_parameters_result.hpp>
 
 #include <cis_scm/Controls.hpp>
-#include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 using namespace std::chrono_literals;
 

@@ -17,18 +17,17 @@
 
 #include <memory>
 #include <optional>
-#include <rclcpp/node.hpp>
 #include <string_view>
 #include <vector>
 
-#include <rclcpp/rclcpp.hpp>
 #include <rclcpp/callback_group.hpp>
+#include <rclcpp/node.hpp>
 #include <rclcpp/parameter.hpp>
+#include <rclcpp/rclcpp.hpp>
 #include <rclcpp/timer.hpp>
 #include <rcl_interfaces/msg/set_parameters_result.hpp>
 
 #include "cis_scm/Controls.hpp"
-#include "rcl_interfaces/msg/set_parameters_result.hpp"
 
 namespace cis_scm
 {
@@ -86,12 +85,14 @@ class ParamHandler
   public:
     virtual ~ParamHandler() = default;
 
-    bool getIgnoreSetParamCB() { return ignore_set_param_cb_; };
-    void setIgnoreSetParamCB(bool val) { ignore_set_param_cb_ = val; };
+    bool getIgnoreSetParamCB() { return ignore_set_param_cb_; }
+    void setIgnoreSetParamCB(bool val) { ignore_set_param_cb_ = val; }
 
   protected:
     ParamHandler(const std::shared_ptr<rclcpp::Node> & driver_node, CameraCtrlExtern & cam_ctrl)
-    : driver_node_(driver_node), cam_ctrl_(cam_ctrl) {};
+    : driver_node_(driver_node), cam_ctrl_(cam_ctrl)
+    {
+    }
 
     rclcpp::Logger logger_ = rclcpp::get_logger("Camera Parameter Handler");
 

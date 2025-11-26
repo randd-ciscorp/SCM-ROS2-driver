@@ -151,7 +151,7 @@ ssize_t CameraCtrlExtern::writeWithTimeout(const void * buf, size_t len, int tim
             }
             return -1;
         }
-        total_writen += (size_t)ret_write;
+        total_writen += ret_write;
     }
 
     return total_writen;
