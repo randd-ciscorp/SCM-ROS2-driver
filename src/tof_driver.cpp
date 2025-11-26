@@ -50,7 +50,7 @@ ToFNode::ToFNode(const std::string node_name, const rclcpp::NodeOptions & node_o
     depthPCLPub_ =
         create_publisher<sensor_msgs::msg::PointCloud2>(topicDepthPrefix_ + "points", qos);
 
-    cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-tof1");
+    cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm_tof1");
 }
 
 int ToFNode::initCap()

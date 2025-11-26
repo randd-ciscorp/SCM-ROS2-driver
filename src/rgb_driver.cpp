@@ -15,6 +15,7 @@
 #include "cis_scm/rgb_driver.hpp"
 
 #include <opencv2/opencv.hpp>
+#include <rclcpp/logging.hpp>
 #include <rclcpp/qos.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/image_encodings.hpp>
@@ -47,7 +48,7 @@ void RGBNode::importParams()
     if (this->get_parameter("rgb_device").as_string() == "2m1") {
         width_ = 1920;
         height_ = 1080;
-        // cinfo_->setCameraName("scm-2m1");
+        cinfo_->setCameraName("scm_2m1");
 
         if (!this->has_parameter("rgb_camera_params")) {
             this->declare_parameter(
@@ -56,7 +57,7 @@ void RGBNode::importParams()
     } else if (this->get_parameter("rgb_device").as_string() == "8m1") {
         width_ = 3840;
         height_ = 2160;
-        cinfo_->setCameraName("scm-8m1");
+        cinfo_->setCameraName("scm_8m1");
 
         if (!this->has_parameter("rgb_camera_params")) {
             this->declare_parameter(

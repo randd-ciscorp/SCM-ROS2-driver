@@ -1,6 +1,6 @@
 image_width: 640
 image_height: 480
-camera_name: scm-rgbd1
+camera_name: scm_rgbd1
 camera_matrix:
   rows: 3
   cols: 3

@@ -40,8 +40,8 @@ RGBDNode::RGBDNode(const std::string node_name, const rclcpp::NodeOptions & node
     rgbImgPub_ = create_publisher<sensor_msgs::msg::Image>(topicRGBPrefix_ + "image", qos);
     infoRGBPub_ =
         create_publisher<sensor_msgs::msg::CameraInfo>(topicRGBPrefix_ + "camera_info", qos);
-    cinfo_rgb_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-rgbd1");
-    cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-rgbd1");
+    cinfo_rgb_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm_rgbd1");
+    cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm_rgbd1");
 }
 
 int RGBDNode::initCap()
