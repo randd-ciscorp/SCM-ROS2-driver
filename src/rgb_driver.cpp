@@ -15,6 +15,8 @@
 #include "cis_scm/rgb_driver.hpp"
 
 #include <opencv2/opencv.hpp>
+#include <rclcpp/logging.hpp>
+#include <rclcpp/qos.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
@@ -28,12 +30,13 @@ namespace cis_scm
 RGBNode::RGBNode(const std::string node_name, const rclcpp::NodeOptions & node_options)
 : Node(node_name, node_options)
 {
-    infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicRGBPrefix_ + "camera_info", 10);
+    rclcpp::SensorDataQoS qos;
+
+    infoPub_ = create_publisher<sensor_msgs::msg::CameraInfo>(topicRGBPrefix_ + "camera_info", qos);
 
     cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this);
 
-    imgPub_ = create_publisher<sensor_msgs::msg::Image>(topicRGBPrefix_ + "image", 10);
-    importParams();
+    imgPub_ = create_publisher<sensor_msgs::msg::Image>(topicRGBPrefix_ + "image", qos);
 }
 
 void RGBNode::importParams()
@@ -45,7 +48,7 @@ void RGBNode::importParams()
     if (this->get_parameter("rgb_device").as_string() == "2m1") {
         width_ = 1920;
         height_ = 1080;
-        // cinfo_->setCameraName("scm-2m1");
+        cinfo_->setCameraName("scm_2m1");
 
         if (!this->has_parameter("rgb_camera_params")) {
             this->declare_parameter(
@@ -54,7 +57,7 @@ void RGBNode::importParams()
     } else if (this->get_parameter("rgb_device").as_string() == "8m1") {
         width_ = 3840;
         height_ = 2160;
-        cinfo_->setCameraName("scm-8m1");
+        cinfo_->setCameraName("scm_8m1");
 
         if (!this->has_parameter("rgb_camera_params")) {
             this->declare_parameter(
@@ -94,14 +97,14 @@ int RGBNode::initCap()
 void RGBNode::dispInfo(DevInfo devInfo) const
 {
     RCLCPP_INFO(get_logger(), "Device name: %s", devInfo.devName.c_str());
-    RCLCPP_INFO(get_logger(), "Driver version: %s", devInfo.driverVers.c_str());
-    RCLCPP_INFO(get_logger(), "Serial Number: %s", devInfo.sn.c_str());
     RCLCPP_INFO(get_logger(), "Width: %d", devInfo.width);
     RCLCPP_INFO(get_logger(), "Height: %d", devInfo.height);
 }
 
 void RGBNode::start()
 {
+    importParams();
+
     if (initCap()) {
         RCLCPP_ERROR(get_logger(), "Camera initialization failed");
         rclcpp::shutdown();
@@ -146,6 +149,11 @@ void RGBNode::imgCallback()
         RCLCPP_ERROR(get_logger(), "Camera connection lost or unavailable");
         rclcpp::sleep_for(std::chrono::seconds(3));
         RCLCPP_INFO(get_logger(), "New camera connection attempt");
+        if (!cap_->connect(width_, height_)) {
+            RCLCPP_INFO(get_logger(), "Camera connected");
+        } else {
+            RCLCPP_ERROR(get_logger(), "Camera connection failed");
+        }
     } else {
         cv::Mat imgData(height_, width_, CV_8UC2);
         if (!cap_->getData(imgData.data)) {
@@ -159,6 +167,8 @@ void RGBNode::imgCallback()
             // 2D image
             cv::cvtColor(imgData, imgData, cv::COLOR_YUV2BGR_YUYV);
             pubImage(imgData.data);
+        } else {
+            cap_->disconnect();
         }
     }
 }

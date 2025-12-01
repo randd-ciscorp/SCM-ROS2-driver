@@ -177,12 +177,9 @@ DevInfo ExternalDevice::getInfo() const
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (xioctl(fd_, VIDIOC_G_FMT, &fmt) < 0) {
         errnoExit("Get device format");
-        return DevInfo();
     }
 
     devInfo.devName = std::string(reinterpret_cast<char *>(cap.card));
-    devInfo.driverVers = std::string(reinterpret_cast<char *>(cap.driver));
-    devInfo.sn = std::string(reinterpret_cast<char *>(cap.bus_info));
     devInfo.width = fmt.fmt.pix.width;
     devInfo.height = fmt.fmt.pix.height;
 
@@ -194,8 +191,16 @@ int ExternalDevice::getData(uint8_t * data)
     FD_ZERO(&fds);
     FD_SET(fd_, &fds);
 
-    if (select(fd_ + 1, &fds, NULL, NULL, NULL) <= 0) {
-        return errnoPrint("Frame capture timeout");
+    struct timeval tv;
+    tv.tv_sec = 20;
+    tv.tv_usec = 0;
+
+    int select_ret = select(fd_ + 1, &fds, NULL, NULL, &tv);
+    if (select_ret == 0) {
+        fprintf(stderr, "Frame capture timeout");
+        return -1;
+    } else if (select_ret < 0) {
+        return errnoPrint("select");
     }
 
     if (FD_ISSET(fd_, &fds)) {

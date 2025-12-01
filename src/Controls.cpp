@@ -14,16 +14,23 @@
 
 #include "cis_scm/Controls.hpp"
 
+#include <bits/types/struct_timeval.h>
 #include <fcntl.h>
+#include <sys/select.h>
 #include <sys/types.h>
 #include <termio.h>
 #include <unistd.h>
+
 #include <cctype>
+#include <cerrno>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <exception>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -32,13 +39,53 @@ namespace cis_scm
 
 CameraCtrlExtern::CameraCtrlExtern()
 {
-    fd_ = open("/dev/ttyACM0", O_RDWR | O_NOCTTY);
-    if (fd_ < 0) {
+    if (openACMDev() < 0) {
+        ctrl_ok = false;
         perror("Error opening CIS Protocol device");
-        throw std::runtime_error("CameraCtrlExtern init failed");
+        return;
     }
 
     configSerial();
+    ctrl_ok = true;
+}
+
+CameraCtrlExtern::~CameraCtrlExtern() { closeDev(); }
+
+int CameraCtrlExtern::openACMDev()
+{
+    for (int i = 0; i < 10; i++) {
+        std::ostringstream oss;
+        oss << "/sys/class/tty/ttyACM" << i << "/device/../product";
+        std::string dev_sysfile = oss.str();
+
+        std::ifstream ifs(dev_sysfile);
+        if (ifs.fail()) {
+            continue;
+        }
+
+        std::string dev_product;
+        std::getline(ifs, dev_product);
+
+        if (dev_product == cis_prod_name) {
+            oss = std::ostringstream{};
+            oss << "/dev/ttyACM" << i;
+            std::string dev_file = oss.str();
+
+            fd_ = open(dev_file.c_str(), O_RDWR | O_NOCTTY);
+            if (fd_ < 0) {
+                return -1;
+            }
+            dev_path = dev_file;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+void CameraCtrlExtern::closeDev()
+{
+    close(fd_);
+    fd_ = -1;
 }
 
 void CameraCtrlExtern::configSerial()
@@ -70,16 +117,54 @@ void CameraCtrlExtern::configSerial()
     }
 }
 
-CameraCtrlExtern::~CameraCtrlExtern() { close(fd_); }
+ssize_t CameraCtrlExtern::writeWithTimeout(const void * buf, size_t len, int timeout_ms)
+{
+    size_t total_writen = 0;
+
+    while (total_writen < len) {
+        fd_set fds;
+        FD_ZERO(&fds);
+        FD_SET(fd_, &fds);
+
+        struct timeval tv;
+        tv.tv_sec = timeout_ms / 1000;
+        tv.tv_usec = (timeout_ms % 1000) * 1000;
+
+        int select_ret = select(fd_ + 1, NULL, &fds, NULL, &tv);
+        if (select_ret < 0) {
+            if (select_ret == EINTR) {
+                continue;
+            }
+            return -1;
+        }
+        if (select_ret == 0) {
+            errno = ETIMEDOUT;
+            return 0;
+        }
+
+        ssize_t ret_write =
+            write(fd_, reinterpret_cast<const uint8_t *>(buf) + total_writen, len - total_writen);
+
+        if (ret_write < 0) {
+            if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+                continue;
+            }
+            return -1;
+        }
+        total_writen += ret_write;
+    }
+
+    return total_writen;
+}
 
 void CameraCtrlExtern::setControlInt(int ctrl, int val)
 {
     std::stringstream ss;
     ss << "SU " << ctrl << " " << val << "\r\n";
     std::string cmd = ss.str();
-    std::cout << cmd << std::endl;
-    if (write(fd_, cmd.c_str(), cmd.length()) <= 0) {
-        std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
+    if (writeWithTimeout(cmd.c_str(), cmd.length(), 10e3) <= 0) {
+        std::cerr << "Failed to write to " << dev_path << std::endl;
+        ctrl_ok = false;
     }
     tcdrain(fd_);
 }
@@ -89,9 +174,9 @@ void CameraCtrlExtern::setControlFloat(int ctrl, float val)
     std::stringstream ss;
     ss << "SU " << ctrl << " " << val << "\r\n";
     std::string cmd = ss.str();
-    std::cout << cmd << std::endl;
-    if (write(fd_, cmd.c_str(), cmd.length()) <= 0) {
-        std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
+    if (writeWithTimeout(cmd.c_str(), cmd.length(), 10e3) <= 0) {
+        std::cerr << "Failed to write to " << dev_path << std::endl;
+        ctrl_ok = false;
     }
     tcdrain(fd_);
 }
@@ -101,9 +186,9 @@ void CameraCtrlExtern::setControlBool(int ctrl, bool val)
     std::stringstream ss;
     ss << "SU " << ctrl << " " << val << "\r\n";
     std::string cmd = ss.str();
-    std::cout << cmd << std::endl;
-    if (write(fd_, cmd.c_str(), cmd.length()) <= 0) {
-        std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
+    if (writeWithTimeout(cmd.c_str(), cmd.length(), 10e3) <= 0) {
+        std::cerr << "Failed to write to " << dev_path << std::endl;
+        ctrl_ok = false;
     }
     tcdrain(fd_);
 }
@@ -118,9 +203,9 @@ void CameraCtrlExtern::setControlFloatArray(int ctrl, float * vals, int arr_len)
     ss << "\r\n";
 
     std::string cmd = ss.str();
-    std::cout << cmd << std::endl;
-    if (write(fd_, cmd.c_str(), cmd.length()) <= 0) {
-        std::cerr << "Failed to write to /dev/ttymxc0" << std::endl;
+    if (writeWithTimeout(cmd.c_str(), cmd.length(), 10e3) <= 0) {
+        std::cerr << "Failed to write to " << dev_path << std::endl;
+        ctrl_ok = false;
     }
     tcdrain(fd_);
 }
@@ -136,7 +221,11 @@ int CameraCtrlExtern::readCispVal(std::string & out_val, int ctrl_id, uint8_t by
     char r_buf[256];
     memset(r_buf, 0, sizeof(r_buf));
     tcflush(fd_, TCIOFLUSH);
-    write(fd_, cmd.c_str(), cmd.length());
+
+    if (writeWithTimeout(cmd.c_str(), cmd.length(), 10e3) <= 0) {
+        std::cerr << "Failed to write to " << dev_path << std::endl;
+        ctrl_ok = false;
+    }
 
     // Data query and transfer takes time --> Wait to receive all data
     usleep(20000);

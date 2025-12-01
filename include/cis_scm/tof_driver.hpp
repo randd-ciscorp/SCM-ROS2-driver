@@ -81,9 +81,7 @@ class ToFNode : public rclcpp::Node
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::Image>> depthImgPub_;
 
     std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoPub_;
-    std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::CameraInfo>> infoDepthPub_;
     std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_;
-    std::shared_ptr<camera_info_manager::CameraInfoManager> cinfo_depth_;
 
     rclcpp::CallbackGroup::SharedPtr crit_cb_grp_;
     rclcpp::CallbackGroup::SharedPtr non_crit_cb_grp_;

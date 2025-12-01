@@ -16,14 +16,17 @@
 #define CIS_SCM__CONTROLS_HPP_
 
 #include <sys/types.h>
+
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <string_view>
 
 #include <rclcpp/parameter_client.hpp>
 
 namespace cis_scm
 {
+inline constexpr std::string_view cis_prod_name = "SCM Series";
 
 inline constexpr int cc_matrix_nb_elems = 9;
 
@@ -223,14 +226,20 @@ class CameraCtrlExtern : public CameraCtrl
     void setControlFloatArray(int ctrl, float * vals, int arr_len) override;
     int getControlFloatArray(int ctrl, std::vector<float> & r_vals, int arr_len) override;
 
+    bool isControlOk() { return ctrl_ok; }
+
   private:
     // CIS Protocol device
     int fd_;
     bool ctrl_ok = true;
+    std::string dev_path;
 
+    int openACMDev();
     void configSerial();
+    void closeDev();
 
     int readCispVal(std::string & out_val, int ctrl, uint8_t byte_len);
+    ssize_t writeWithTimeout(const void * buf, size_t len, int timeout_ms);
 };
 }  // namespace cis_scm
 #endif  // CIS_SCM__CONTROLS_HPP_

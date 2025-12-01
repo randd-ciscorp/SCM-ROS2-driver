@@ -20,9 +20,10 @@
 #include <string_view>
 #include <vector>
 
-#include <rclcpp/rclcpp.hpp>
 #include <rclcpp/callback_group.hpp>
+#include <rclcpp/node.hpp>
 #include <rclcpp/parameter.hpp>
+#include <rclcpp/rclcpp.hpp>
 #include <rclcpp/timer.hpp>
 #include <rcl_interfaces/msg/set_parameters_result.hpp>
 
@@ -84,12 +85,22 @@ class ParamHandler
   public:
     virtual ~ParamHandler() = default;
 
+    bool getIgnoreSetParamCB() { return ignore_set_param_cb_; }
+    void setIgnoreSetParamCB(bool val) { ignore_set_param_cb_ = val; }
+
   protected:
+    ParamHandler(const std::shared_ptr<rclcpp::Node> & driver_node, CameraCtrlExtern & cam_ctrl)
+    : driver_node_(driver_node), cam_ctrl_(cam_ctrl)
+    {
+    }
+
     rclcpp::Logger logger_ = rclcpp::get_logger("Camera Parameter Handler");
 
     std::shared_ptr<rclcpp::Node> driver_node_;
 
-    std::unique_ptr<CameraCtrlExtern> cam_ctrl_;
+    CameraCtrlExtern & cam_ctrl_;
+
+    virtual void declareDeviceParams() = 0;
 
     template <typename T>
     rcl_interfaces::msg::ParameterDescriptor setParamDescriptor(uint8_t param_type, T min, T max);
@@ -109,6 +120,7 @@ class ParamHandler
     virtual rcl_interfaces::msg::SetParametersResult setParamCB(
         const std::vector<rclcpp::Parameter> & parameters) = 0;
 
+    virtual void initCallbacks() = 0;
     rclcpp::CallbackGroup::SharedPtr params_cb_grp_;
 
     bool ignore_set_param_cb_ = false;
@@ -124,13 +136,17 @@ class ParamHandler
 class RGBParamHandler : public ParamHandler
 {
   public:
-    explicit RGBParamHandler(std::shared_ptr<rclcpp::Node> driver_node_);
+    // explicit RGBParamHandler(std::shared_ptr<rclcpp::Node> driver_node_);
+    explicit RGBParamHandler(
+        const std::shared_ptr<rclcpp::Node> & driver_node_, CameraCtrlExtern & cam_ctrl);
 
-  private:
+    void declareDeviceParams() override;
+    void updateControlsParams() override;
+
     rcl_interfaces::msg::SetParametersResult setParamCB(
         const std::vector<rclcpp::Parameter> & parameters) override;
 
-    void updateControlsParams() override;
+    void initCallbacks() override;
 };
 
 /**
@@ -139,13 +155,38 @@ class RGBParamHandler : public ParamHandler
 class ToFParamHandler : public ParamHandler
 {
   public:
-    explicit ToFParamHandler(std::shared_ptr<rclcpp::Node> driver_node_);
+    explicit ToFParamHandler(
+        const std::shared_ptr<rclcpp::Node> & driver_node_, CameraCtrlExtern & cam_ctrl);
 
-  private:
+    void declareDeviceParams() override;
+    void updateControlsParams() override;
+
     rcl_interfaces::msg::SetParametersResult setParamCB(
         const std::vector<rclcpp::Parameter> & parameters) override;
 
+    void initCallbacks() override;
+};
+
+/**
+ * @brief Parameter handler for RGBD SCM camera (combinaison of RGBParamHandler & ToFParamHandler parameters)
+*/
+class RGBDParamHandler : public ParamHandler
+{
+  public:
+    explicit RGBDParamHandler(
+        const std::shared_ptr<rclcpp::Node> & driver_node_, CameraCtrlExtern & cam_ctrl);
+
+    rcl_interfaces::msg::SetParametersResult setParamCB(
+        const std::vector<rclcpp::Parameter> & parameters) override;
+
+    void declareDeviceParams() override;
     void updateControlsParams() override;
+
+    void initCallbacks() override;
+
+  private:
+    RGBParamHandler rgb_param_handler_;
+    ToFParamHandler tof_param_handler_;
 };
 }  // namespace cis_scm
 #endif  // CIS_SCM__PARAMS_HPP_

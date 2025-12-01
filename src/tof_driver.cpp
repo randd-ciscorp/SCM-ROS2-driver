@@ -14,13 +14,14 @@
 
 #include "cis_scm/tof_driver.hpp"
 
-#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include <opencv2/opencv.hpp>
 #include <rclcpp/callback_group.hpp>
+#include <rclcpp/qos.hpp>
+#include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
@@ -37,19 +38,19 @@ ToFNode::ToFNode(const std::string node_name, const rclcpp::NodeOptions & node_o
 : Node(node_name, node_options)
 
 {
+    rclcpp::SensorDataQoS qos;
+
     crit_cb_grp_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     non_crit_cb_grp_ = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
 
-    depthImgPub_ = create_publisher<sensor_msgs::msg::Image>(topicDepthPrefix_ + "image", 10);
+    depthImgPub_ = create_publisher<sensor_msgs::msg::Image>(topicDepthPrefix_ + "image", qos);
     infoPub_ =
-        create_publisher<sensor_msgs::msg::CameraInfo>(topicDepthPrefix_ + "camera_info", 10);
+        create_publisher<sensor_msgs::msg::CameraInfo>(topicDepthPrefix_ + "camera_info", qos);
 
     depthPCLPub_ =
-        create_publisher<sensor_msgs::msg::PointCloud2>(topicDepthPrefix_ + "points", 10);
+        create_publisher<sensor_msgs::msg::PointCloud2>(topicDepthPrefix_ + "points", qos);
 
-    cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm-tof1");
-
-    importParams();
+    cinfo_ = std::make_shared<camera_info_manager::CameraInfoManager>(this, "scm_tof1");
 }
 
 int ToFNode::initCap()
@@ -67,8 +68,6 @@ int ToFNode::initCap()
 void ToFNode::dispInfo(DevInfo devInfo) const
 {
     RCLCPP_INFO(get_logger(), "Device name: %s", devInfo.devName.c_str());
-    RCLCPP_INFO(get_logger(), "Driver version: %s", devInfo.driverVers.c_str());
-    RCLCPP_INFO(get_logger(), "Serial Number: %s", devInfo.sn.c_str());
     RCLCPP_INFO(get_logger(), "Width: %d", devInfo.width);
     RCLCPP_INFO(get_logger(), "Height: %d", devInfo.height);
 }
@@ -102,6 +101,8 @@ void ToFNode::importParams()
 
 void ToFNode::start()
 {
+    importParams();
+
     if (initCap()) {
         RCLCPP_ERROR(get_logger(), "Camera initialization failed");
         rclcpp::shutdown();
@@ -122,8 +123,8 @@ void ToFNode::start()
         // ptcModif.resize(ptcMsg_.width * ptcMsg_.height);
 
         RCLCPP_INFO(get_logger(), "Start capturing");
-        timer_ = this->create_wall_timer(
-            66.666ms, std::bind(&ToFNode::depthCallback, this), crit_cb_grp_);
+        timer_ =
+            this->create_wall_timer(70ms, std::bind(&ToFNode::depthCallback, this), crit_cb_grp_);
     } else {
         RCLCPP_ERROR(get_logger(), "Camera connection failed");
         rclcpp::shutdown();
@@ -206,6 +207,11 @@ void ToFNode::depthCallback()
         RCLCPP_ERROR(get_logger(), "Camera connection lost or unavailable");
         rclcpp::sleep_for(std::chrono::seconds(3));
         RCLCPP_INFO(get_logger(), "New camera connection attempt");
+        if (!cap_->connect(width_, height_)) {
+            RCLCPP_INFO(get_logger(), "Camera connected");
+        } else {
+            RCLCPP_ERROR(get_logger(), "Camera connection failed");
+        }
     } else {
         if (!cap_->getData(reinterpret_cast<uint8_t *>(frameData.data()))) {
             // Cam Info
@@ -220,6 +226,8 @@ void ToFNode::depthCallback()
 
             // 3D Image
             pubDepthPtc(xyzData_);
+        } else {
+            cap_->disconnect();
         }
     }
 }
