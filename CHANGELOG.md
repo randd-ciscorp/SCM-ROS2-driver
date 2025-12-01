@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.0.0 2025-12-01
+### Features
+- [X] CI config for multi ROS Distro (32e5328e)
+
+### Updates | Fixes
+- [X] Stream resume after reconnecting USB3.0 cable (e249638c)
+- [X] RGBD node on multi-thread executor(02708ea6)
+- [X] Fixed the paramHandler when tty device is different than 0 (d0cd43ae)
+- [X] Fixed conflicts with RGB & ToF ParamHandler (01d3a803)
+- [X] Set SensorDataQoS for all topics (109069b7)
 
 ## v0.3.1 2025-11-07
 ### Features
