@@ -98,7 +98,7 @@ class PerceptionNode : public rclcpp::Node
         RCLCPP_INFO(this->get_logger(), "Setting up subscriber");
 
         cloud_subscriber_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-            cloud_topic, 1,
+            cloud_topic, rclcpp::SensorDataQoS(),
             std::bind(&PerceptionNode::cloud_callback, this, std::placeholders::_1));
 
         /*
