@@ -117,7 +117,7 @@ void ToFNode::start()
         // Formating pointcloud message
         ptcMsg_.width = width_;
         ptcMsg_.height = height_;
-        ptcMsg_.is_bigendian = true;
+        ptcMsg_.is_bigendian = false;
         sensor_msgs::PointCloud2Modifier ptcModif(ptcMsg_);
         ptcModif.setPointCloud2FieldsByString(1, "xyz");
         // ptcModif.resize(ptcMsg_.width * ptcMsg_.height);
@@ -163,7 +163,7 @@ void ToFNode::pubDepthImage(float * data)
     imgMsg_.height = height_;
     imgMsg_.encoding = sensor_msgs::image_encodings::TYPE_8UC1;
     imgMsg_.step = width_ * sizeof(uchar);
-    imgMsg_.is_bigendian = true;
+    imgMsg_.is_bigendian = false;
     imgMsg_.data.assign(depthMap_.data, depthMap_.data + depthMap_.rows * depthMap_.cols);
     depthImgPub_->publish(std::move(imgMsg_));
 }

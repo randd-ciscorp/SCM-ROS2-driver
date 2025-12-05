@@ -138,7 +138,7 @@ void RGBNode::pubImage(uint8_t * data)
     imgMsg_.height = height_;
     imgMsg_.encoding = sensor_msgs::image_encodings::BGR8;
     imgMsg_.step = width_ * 3;
-    imgMsg_.is_bigendian = true;
+    imgMsg_.is_bigendian = false;
     imgMsg_.data.assign(data, data + imgMsg_.step * imgMsg_.height);
     imgPub_->publish(std::move(imgMsg_));
 }

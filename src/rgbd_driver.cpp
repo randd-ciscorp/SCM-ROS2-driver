@@ -130,7 +130,7 @@ void RGBDNode::start()
         // Formating pointcloud message
         ptcMsg_.width = width_;
         ptcMsg_.height = height_;
-        ptcMsg_.is_bigendian = true;
+        ptcMsg_.is_bigendian = false;
         sensor_msgs::PointCloud2Modifier ptcModif(ptcMsg_);
         if (isPCLNoColor_) {
             ptcModif.setPointCloud2FieldsByString(1, "xyz");
@@ -183,7 +183,7 @@ void RGBDNode::pubRGBImage(uint8_t * rgbdata)
     imgRGBMsg_.height = height_;
     imgRGBMsg_.encoding = sensor_msgs::image_encodings::BGR8;
     imgRGBMsg_.step = width_ * sizeof(uint8_t) * 3;
-    imgRGBMsg_.is_bigendian = true;
+    imgRGBMsg_.is_bigendian = false;
     imgRGBMsg_.data.assign(rgbdata, rgbdata + imgRGBMsg_.height * imgRGBMsg_.step);
     rgbImgPub_->publish(std::move(imgRGBMsg_));
 }
